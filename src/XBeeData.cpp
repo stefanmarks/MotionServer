@@ -171,12 +171,6 @@ void XBeeWriteBuffer::clear()
 }
 
 
-void XBeeWriteBuffer::setByteAt(size_t pos, uint8_t value)
-{
-	m_buffer[pos] = value;
-}
-
-
 void XBeeWriteBuffer::addByte(uint8_t value)
 {
 	m_buffer.push_back(value); 
@@ -194,15 +188,6 @@ void XBeeWriteBuffer::addUInt16(uint16_t value)
 {
 	m_buffer.push_back((uint8_t) ((value >> 8) & 0xFF));
 	m_buffer.push_back((uint8_t) ((value >> 0) & 0xFF));
-}
-
-
-void XBeeWriteBuffer::addUInt32(uint32_t value)
-{
-	m_buffer.push_back((uint8_t) ((value >> 24) & 0xFF));
-	m_buffer.push_back((uint8_t) ((value >> 16) & 0xFF));
-	m_buffer.push_back((uint8_t) ((value >>  8) & 0xFF));
-	m_buffer.push_back((uint8_t) ((value >>  0) & 0xFF));
 }
 
 
