@@ -1,5 +1,5 @@
 /**
- * Motion Server
+ * Motion Server main functions and server thread.
  *
  * (C) 2014-2016 by Stefan Marks
  * Auckland University of Technology
@@ -58,6 +58,8 @@
 #include "MoCapCortex.h"
 #endif
 
+#include "XBeeDevice.h"
+#include "XBeePacket.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -693,6 +695,9 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 	#ifdef MONITOR_MEMORY_USAGE
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	#endif
+
+	//_testXBeeDevice();
+	//serverStarting = false;
 
 	// check for command line parameters
 	parseCommandLine(nArguments, arrArguments);

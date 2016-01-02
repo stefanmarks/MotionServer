@@ -1,5 +1,56 @@
 #include "Logging.h"
 
+#include <ios>
+#include <iomanip>
+
+
+void printMemory(std::ostream& refOutput, const void* pBuf, size_t length)
+{
+	// store previous stream settings
+	std::stringstream strm;
+	strm.fill('0');
+
+	strm << std::hex << pBuf << ":" << std::endl; // address
+
+	for (size_t offset = 0; offset < length; offset += 16)
+	{
+		strm << std::setw(4) << offset << ": ";
+
+		for (size_t b = 0; b < 16; b++ )
+		{
+			if ( offset + b < length )
+			{ 
+				strm << std::setw(2) << (int)((uint8_t*)pBuf)[offset + b] << " ";
+			}
+			else
+			{
+				strm << "   ";
+			}
+		}
+
+		strm << "  ";
+		for (size_t b = 0; b < 16; b++)
+		{
+			if (offset + b < length)
+			{
+				uint8_t c = ((uint8_t*)pBuf)[offset + b];
+
+				if ((c >= ' ') && (c <= 127))
+				{
+					strm << (char)c;
+				}
+				else
+				{
+					strm << '.';
+				}
+			}
+		}
+		strm << std::endl;		
+	}
+
+	refOutput << strm.str();
+}
+
 
 void printModelDefinitions(std::ostream& refOutput, sDataDescriptions& refData)
 {

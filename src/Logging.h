@@ -15,6 +15,12 @@
 #include "NatNetTypes.h"
 
 /**
+ * Prints a section of memory.
+ */
+void printMemory(std::ostream& refOutput, const void* pBuf, size_t length);
+
+
+/**
  * Prints the model definition into an output stream. 
  */
 void printModelDefinitions(std::ostream& refOutput, sDataDescriptions& refData);
