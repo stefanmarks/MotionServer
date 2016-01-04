@@ -8,7 +8,7 @@
 #undef   LOG_CLASS
 #define  LOG_CLASS "XBeeDevice"
 
-#define  LOG_DATA
+#undef  LOG_DATA // define to get memory dumps of the received packets
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,7 +70,8 @@ uint16_t XBeeDevice::getNetworkAddress() const
 XBeeCoordinator::XBeeCoordinator(SerialPort& refPort) :
 	XBeeDevice(),
 	m_serialPort(refPort),
-	m_frameCounter(1)
+	m_frameCounter(1),
+	m_numOfRetries(3)
 {
 	// prepare serial port
 	if (!m_serialPort.isOpen())
@@ -157,10 +158,10 @@ bool XBeeCoordinator::send(XBeePacket_Send& refPacket)
 	m_bufOut.addByte(0);
 	m_bufOut.addByte(0);
 
-	// now the packet payload
+	// now add the packet payload
 	refPacket.marshal(m_bufOut);
 
-	// fill in packet length (bytes 1 and 2)
+	// fill in packet length (bytes 1 and 2) retrospectively
 	uint16_t dataLen = (uint16_t)(m_bufOut.size() - 3);
 	m_bufOut.setUInt16At(1, dataLen);
 
@@ -222,17 +223,29 @@ std::unique_ptr<XBeePacket_Receive> XBeeCoordinator::receive()
 bool XBeeCoordinator::receive(XBeePacket_Receive& refReceive)
 {
 	bool success = false;
+	bool retry   = true;
+	int  retries = m_numOfRetries;
 
-	if (receivePacket())
+	while (!success && retry)
 	{
-		auto frameTypeID = m_bufIn.getByteAt(3);
-		if (frameTypeID == refReceive.getFrameTypeID())
+		if (receivePacket())
 		{
-			success = refReceive.unmarshal(m_bufIn);
+			auto frameTypeID = m_bufIn.getByteAt(3);
+			if (frameTypeID == refReceive.getFrameTypeID())
+			{
+				success = refReceive.unmarshal(m_bufIn);
+			}
+			else
+			{
+				retries--;
+				retry = (retries > 0);
+				LOG_WARNING("Unexpected frame type 0x" << std::hex << (int)frameTypeID);
+			}
 		}
 		else
 		{
-			LOG_ERROR("Unexpected frame type 0x" << std::hex << (int)frameTypeID);
+			// nothing received any more > get out
+			retry = false;
 		}
 	}
 
@@ -265,7 +278,13 @@ bool XBeeCoordinator::process(XBeePacket_Send& refSend, XBeePacket_Receive& refR
 		}
 	}
 
-	return true;
+	return success;
+}
+
+
+void XBeeCoordinator::setNumberOfRetries(int retries)
+{
+	m_numOfRetries = max(1, retries);
 }
 
 
@@ -415,6 +434,7 @@ void _testXBeeDevice()
 						<< std::endl;
 
 					std::cout << "Connected Devices:" << std::endl;
+					device.setNumberOfRetries(20);
 					device.scanDevices();
 					for each (auto node in device.getConnectedDevices())
 					{

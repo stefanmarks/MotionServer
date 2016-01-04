@@ -174,7 +174,7 @@ bool SerialPort::setTimeout(DWORD timeout)
 		// set new timeout values
 		if (::SetCommTimeouts(m_hPort, &timeouts))
 		{
-			LOG_INFO("Set timeout of serial port " << m_strPortName << " to " << timeout);
+			// LOG_INFO("Set timeout of serial port " << m_strPortName << " to " << timeout);
 			success = true;
 		}
 		else

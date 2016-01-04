@@ -145,6 +145,13 @@ public:
 	bool process(XBeePacket_Send& refSend, XBeePacket_Receive& refReceive);
 
 	/**
+	 * Sets the number of retries when a received packet is not as expected.
+	 *
+	 * @param retries  the number of retries
+	 */
+	void setNumberOfRetries(int retries);
+
+	/**
 	 * Scans for any other connected devices.
 	 *
 	 * @return  number of connected devices found
@@ -172,6 +179,7 @@ protected:
 
 	SerialPort&      m_serialPort;   // the serial port to use for this device
 	uint8_t          m_frameCounter; // current frame ID for command/response pairs
+	int              m_numOfRetries; // the number of receive retries
 	XBeeReadBuffer   m_bufIn;        // buffer for incoming data
 	XBeeWriteBuffer  m_bufOut;       // buffer for outgoing data
 
