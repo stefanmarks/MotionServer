@@ -58,8 +58,7 @@
 #include "MoCapCortex.h"
 #endif
 
-#include "XBeeDevice.h"
-#include "XBeePacket.h"
+#include "InteractionSystem.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,6 +76,8 @@ struct sConfiguration
 	std::string strRemoteCortexAddress;
 	std::string strLocalCortexAddress;
 
+	int         iInteractionControllerPort;
+
 	bool        useOculusRift;
 
 	sConfiguration()
@@ -91,6 +92,8 @@ struct sConfiguration
 		// -> so let's use 1508, 1509
 		iNatNetCommandPort = 1508;
 		iNatNetDataPort    = 1509;
+
+		iInteractionControllerPort = 0;
 
 		useCortex              = true;
 		strRemoteCortexAddress = "127.0.0.1";
@@ -107,7 +110,7 @@ struct sConfiguration
 
 // Server version information
 std::string   strServerName       = "MotionServer";
-const    char arrServerVersion[4] = { 1, 5, 3, 0 };
+const    char arrServerVersion[4] = { 1, 6, 0, 1 };
 unsigned char arrServerNatNetVersion[4]; // filled in later
 
 // Server variables
@@ -122,6 +125,9 @@ MoCapSystem*  pMoCapSystem;
 std::mutex    mtxMoCap;
 MoCapData*    pMocapData;
 sPacket       packetOut;
+
+// Interaction system variables
+InteractionSystem* pInteractionSystem;
 
 // Miscellaneous
 // 
@@ -169,6 +175,7 @@ void printUsage()
 		<< "-cortexRemoteAddr\tIP Address of remote interface to connect to Cortex" << std::endl
 		<< "-cortexLocalAddr\tIP Address of local interface to connect to Cortex" << std::endl
 #endif
+		<< "-interactionControllerPort\tCOM port of XBee interaction controller (-1: scan)" << std::endl
 	;
 }
 
@@ -226,7 +233,7 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 #endif
 		}
 		// check arguments with one additional parameter
-	    if (argIdx + 1 < nArguments)
+		if (argIdx + 1 < nArguments)
 		{
 			// convert parameter to UTF8
 			std::wstring strParam1W(arrArguments[argIdx + 1]);
@@ -257,6 +264,11 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 				config.useCortex = true;
 			}
 #endif
+			else if (strArg == "-interactioncontrollerport")
+			{
+				// Cortex local address
+				config.iInteractionControllerPort = atoi(strParam1.c_str());
+			}
 		}
 
 		argIdx++; // next argument
@@ -270,7 +282,7 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
  *
  * @return  the MoCap system instance
  */
-MoCapSystem* detectActiveMoCapSystem()
+MoCapSystem* detectMoCapSystem()
 {
 	MoCapSystem* pSystem = NULL;
 
@@ -322,6 +334,60 @@ MoCapSystem* detectActiveMoCapSystem()
 
 		pSystem = new MoCapSimulator();
 		pSystem->initialise();
+	}
+
+	return pSystem;
+}
+
+
+/**
+* Detects the XBee interaction system controller.
+*
+* @return  the controller instance
+*/
+InteractionSystem* detectInteractionSystem()
+{
+	InteractionSystem*          pSystem = NULL;
+
+	if (config.iInteractionControllerPort > 255)
+	{
+		// invalid > don't use
+		config.iInteractionControllerPort = 0;
+	}
+
+	int scanFrom = config.iInteractionControllerPort;
+	int scanTo   = config.iInteractionControllerPort + 1;
+	if (config.iInteractionControllerPort < 0)
+	{
+		scanFrom = 1;
+		scanTo = 256;
+		LOG_INFO("Scanning for XBee Interaction Controller...");
+	}
+	else if (config.iInteractionControllerPort > 0)
+	{
+		LOG_INFO("Searching XBee Interaction Controller on COM" << config.iInteractionControllerPort);
+	}
+
+	// scan ports 
+	for (int iPort = scanFrom; iPort < scanTo; iPort++)
+	{
+		if (iPort == 10) continue; // TODO: remove later (hack to avoid getting stuck on COM10 on my laptop)
+
+		std::unique_ptr<SerialPort> pSerialPort(new SerialPort(iPort));
+		if (pSerialPort->exists() && pSerialPort->open())
+		{
+			pSystem = new InteractionSystem(pSerialPort);
+			if (pSystem->initialise())
+			{
+				LOG_INFO("Found XBee Interaction Controller on COM" << iPort);
+			} 
+			else
+			{
+				pSystem->deinitialise();
+				delete pSystem;
+				pSystem = NULL;
+			}
+		}
 	}
 
 	return pSystem;
@@ -696,9 +762,6 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	#endif
 
-	//_testXBeeDevice();
-	//serverStarting = false;
-
 	// check for command line parameters
 	parseCommandLine(nArguments, arrArguments);
 
@@ -709,13 +772,17 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 			LOG_INFO("Starting Motion Server v" 
 				<< (int) arrServerVersion[0] << "."
 				<< (int) arrServerVersion[1] << "."
-				<< (int) arrServerVersion[2]);
+				<< (int) arrServerVersion[2] << "."
+				<< (int) arrServerVersion[3]);
 
 			// create data object
 			pMocapData = new MoCapData();
 
-			// which MoCap system is going to be used?
-			pMoCapSystem = detectActiveMoCapSystem();
+			// detect MoCap system?
+			pMoCapSystem = detectMoCapSystem();
+
+			// detect interaction system
+			pInteractionSystem = detectInteractionSystem();
 
 			// start server
 			if ( createServer() )
@@ -790,6 +857,13 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 			}
 
 			destroyServer();
+
+			if (pInteractionSystem)
+			{
+				pInteractionSystem->deinitialise();
+				delete pInteractionSystem;
+				pInteractionSystem = NULL;
+			}
 
 			// clean up structures and objects
 			mtxMoCap.lock();

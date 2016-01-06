@@ -92,7 +92,7 @@
     <ClInclude Include="include\NatNetTypes.h" />
     <ClInclude Include="src\Config.h" />
     <ClInclude Include="src\Converter.h" />
-    <ClInclude Include="src\InteractionManager.h" />
+    <ClInclude Include="src\InteractionSystem.h" />
     <ClInclude Include="src\MoCapCortex.h" />
     <ClInclude Include="src\MoCapData.h" />
     <ClInclude Include="src\MoCapSimulator.h" />
@@ -106,7 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Converter.cpp" />
-    <ClCompile Include="src\InteractionManager.cpp" />
+    <ClCompile Include="src\InteractionSystem.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\MoCapCortex.cpp" />
     <ClCompile Include="src\MoCapData.cpp" />

@@ -40,25 +40,28 @@ bool SerialPort::exists() const
 
 bool SerialPort::open()
 {
-	std::wstring strFileNameW(m_strFileName.begin(), m_strFileName.end()); // convert to wchar
-	m_hPort = ::CreateFile(
-		strFileNameW.c_str(),
-		GENERIC_READ | GENERIC_WRITE, // access rights
-		0,                            // don't share port
-		0,                            // no security flags necessary
-		OPEN_EXISTING,                // must exist to be opened
-		0,					          // no overlapped operation
-		0                             // no template file for COM ports
-	);
+	if (!isOpen())
+	{
+		std::wstring strFileNameW(m_strFileName.begin(), m_strFileName.end()); // convert to wchar
+		m_hPort = ::CreateFile(
+			strFileNameW.c_str(),
+			GENERIC_READ | GENERIC_WRITE, // access rights
+			0,                            // don't share port
+			0,                            // no security flags necessary
+			OPEN_EXISTING,                // must exist to be opened
+			0,					          // no overlapped operation
+			0                             // no template file for COM ports
+			);
 
-	if (m_hPort == INVALID_HANDLE_VALUE)
-	{
-		handleError("opening serial port");
-		m_hPort = 0;
-	}
-	else
-	{
-		LOG_INFO("Opened serial port " << m_strPortName);
+		if (m_hPort == INVALID_HANDLE_VALUE)
+		{
+			handleError("opening serial port");
+			m_hPort = 0;
+		}
+		else
+		{
+			LOG_INFO("Opened serial port " << m_strPortName);
+		}
 	}
 
 	return isOpen();
