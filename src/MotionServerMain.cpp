@@ -110,8 +110,8 @@ struct sConfiguration
 
 // Server version information
 std::string   strServerName       = "MotionServer";
-const    char arrServerVersion[4] = { 1, 6, 0, 2 };
-unsigned char arrServerNatNetVersion[4]; // filled in later
+const uint8_t arrServerVersion[4] = { 1, 6, 0, 2 };
+      uint8_t arrServerNatNetVersion[4]; // filled in later
 
 // Server variables
 NatNetServer* pServer = NULL;
@@ -363,11 +363,11 @@ InteractionSystem* detectInteractionSystem()
 	{
 		scanFrom = 1;
 		scanTo = 256;
-		LOG_INFO("Scanning for XBee Interaction Controller...");
+		LOG_INFO("Scanning for Interaction System...");
 	}
 	else if (config.iInteractionControllerPort > 0)
 	{
-		LOG_INFO("Searching XBee Interaction Controller on COM" << config.iInteractionControllerPort);
+		LOG_INFO("Searching Interaction System on COM" << config.iInteractionControllerPort);
 	}
 
 	// scan ports 
@@ -381,7 +381,7 @@ InteractionSystem* detectInteractionSystem()
 			pSystem = new InteractionSystem(pSerialPort);
 			if (pSystem->initialise())
 			{
-				LOG_INFO("Found XBee Interaction Controller on COM" << iPort);
+				LOG_INFO("Found Interaction System on COM" << iPort);
 			} 
 			else
 			{
@@ -390,6 +390,11 @@ InteractionSystem* detectInteractionSystem()
 				pSystem = NULL;
 			}
 		}
+	}
+
+	if (!pSystem)
+	{
+		LOG_INFO("Cound not find Interaction System");
 	}
 
 	return pSystem;
@@ -436,9 +441,11 @@ bool createServer()
 		pServer->SetMulticastAddress((char*) config.strNatNetServerMulticastAddress.c_str());
 	}
 
-	int retCode = pServer->Initialize((char*) config.strNatNetServerUnicastAddress.c_str(),
-			                          config.iNatNetCommandPort, 
-									  config.iNatNetDataPort);
+	int retCode = pServer->Initialize(
+		(char*) config.strNatNetServerUnicastAddress.c_str(),
+		config.iNatNetCommandPort, 
+		config.iNatNetDataPort);
+
 	if (retCode == ErrorCode_OK)
 	{
 		LOG_INFO(((iConnectionType == ConnectionType_Multicast) ? "Multicast" : "Unicast") << " server initialised");

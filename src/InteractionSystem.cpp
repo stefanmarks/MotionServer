@@ -28,7 +28,7 @@ bool InteractionSystem::initialise()
 		if (m_pCoordinator->isValid())
 		{
 			// detect connected devices
-			LOG_INFO("Scanning for Interaction Devices...");
+			LOG_INFO("Scanning for devices...");
 			m_pCoordinator->setNumberOfRetries(20);
 			m_pCoordinator->scanDevices();
 			if (!m_pCoordinator->getConnectedDevices().empty())
@@ -45,7 +45,7 @@ bool InteractionSystem::initialise()
 						<< ", Parent " << std::hex << node->getParentAddress();
 					firstLine = false;
 				}
-				LOG_INFO("Connected Interaction Devices: " << std::endl << output.str());
+				LOG_INFO("Connected devices: " << std::endl << output.str());
 
 				// start receiver thread
 				m_receiverThread = std::thread(&InteractionSystem::receiverThread, this);
@@ -53,7 +53,7 @@ bool InteractionSystem::initialise()
 			}
 			else
 			{
-				LOG_INFO("No Interaction Devices connected");
+				LOG_INFO("No devices connected");
 			}
 
 		}
