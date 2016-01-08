@@ -7,7 +7,8 @@
 #include "MoCapData.h"
 #include <string>
 
-// these two functions can be used by the class to stream frames
+
+// this function can be used by the class to stream frames
 extern void signalNewFrame();
 
 /**

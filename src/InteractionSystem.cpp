@@ -5,6 +5,126 @@
 #define  LOG_CLASS "InteractionSystem"
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+InteractionDevice::InteractionDevice(const std::string& name) :
+	m_deviceName(name)
+{
+	// nothing else to do
+}
+
+
+const std::string& InteractionDevice::getName() const
+{
+	return m_deviceName;
+}
+
+
+const std::vector<std::string>& InteractionDevice::getChannelNames() const
+{
+	return m_arrChannelNames;
+}
+
+
+const std::vector<float>& InteractionDevice::getChannelValues() const
+{
+	return m_arrChannels;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+InteractionDevice_Joystick::InteractionDevice_Joystick(const std::string& name, XBeeRemoteDevice& refDevice) :
+	InteractionDevice(name),
+	m_device(refDevice)
+{
+	m_arrChannelNames.push_back("button1"); m_arrChannels.push_back(0);
+	m_arrChannelNames.push_back("button2"); m_arrChannels.push_back(0);
+	m_arrChannelNames.push_back("button3"); m_arrChannels.push_back(0);
+	m_arrChannelNames.push_back("button4"); m_arrChannels.push_back(0);
+	m_arrChannelNames.push_back("button5"); m_arrChannels.push_back(0);
+	m_arrChannelNames.push_back("button6"); m_arrChannels.push_back(0);
+	m_arrChannelNames.push_back("axis1");   m_arrChannels.push_back(0);
+	m_arrChannelNames.push_back("axis2");   m_arrChannels.push_back(0);
+}
+
+
+bool InteractionDevice_Joystick::update(const XBeePacket_Receive& refPacket)
+{
+	bool success = false;
+	// is this the right packet type
+	if (refPacket.getFrameTypeID() == XBeePacket_IO_DataSample::FRAME_TYPE_ID) 
+	{
+		// is this from the correct device?
+		const XBeePacket_IO_DataSample& sample = (const XBeePacket_IO_DataSample&) refPacket;
+		if (sample.getNetworkAddress() == m_device.getNetworkAddress())
+		{
+			// yes > parse
+			uint8_t pinState  = ((uint8_t)(sample.getDigitalInputState() & 0x00FF)); // only use lower 8 bits
+			
+			bool btnPrimary   = (pinState & 0x04) == 0; // pin 2: Primary Fire pressed
+			bool btnSecondary = (pinState & 0x08) == 0; // pin 3: Secondary Fire pressed
+			bool btnThumb     = (pinState & 0x40) == 0; // pin 6: Thumb buttons pressed
+			bool btnStick     = (pinState & 0x80) == 0; // pin 7: Thumbstick moved
+			uint8_t bitsThumb = (pinState & 0x30) >> 4; // pins 4 and 5: encoded thumb button/stick direction
+
+			m_arrChannels[0] = btnPrimary   ? 1.0f : 0;
+			m_arrChannels[1] = btnSecondary ? 1.0f : 0;
+
+			m_arrChannels[2] = (btnThumb & (bitsThumb == 3)) ? 1.0f : 0; // BL
+			m_arrChannels[3] = (btnThumb & (bitsThumb == 2)) ? 1.0f : 0; // BR
+			m_arrChannels[4] = (btnThumb & (bitsThumb == 1)) ? 1.0f : 0; // TL
+			m_arrChannels[5] = (btnThumb & (bitsThumb == 0)) ? 1.0f : 0; // TR
+
+			if (btnStick)
+			{
+				// thumbstick pressed > translate into axis
+				switch (bitsThumb)
+				{
+				case 0: // forward
+					m_arrChannels[6] = 0;
+					m_arrChannels[7] = +1;
+					break;
+
+				case 1: // left
+					m_arrChannels[6] = -1;
+					m_arrChannels[7] = 0;
+					break;
+
+				case 2: // right
+					m_arrChannels[6] = +1;
+					m_arrChannels[7] = 0;
+					break;
+
+				case 3: // backwards
+					m_arrChannels[6] = 0;
+					m_arrChannels[7] = -1;
+					break;
+				}
+			}
+			else
+			{
+				m_arrChannels[6] = 0;
+				m_arrChannels[7] = 0;
+			}
+
+			/*
+			LOG_INFO("update " << std::hex << (int) pinState << " " << btnPrimary << " " << btnSecondary
+				<< " " << m_arrChannels[2] << " " << m_arrChannels[3]
+				<< " " << m_arrChannels[4] << " " << m_arrChannels[5]
+				<< " X:" << m_arrChannels[6] << ", Y:" << m_arrChannels[7]);
+			*/
+
+			success = true;
+		}
+	}
+	return success;
+}
+
+
+
+
 InteractionSystem::InteractionSystem(std::unique_ptr<SerialPort>& pPort)
 {
 	m_pSerialPort = std::move(pPort);
@@ -35,7 +155,7 @@ bool InteractionSystem::initialise()
 			{
 				std::stringstream output;
 				bool firstLine = true; // avoid unnecessary line after list
-				for each (auto node in m_pCoordinator->getConnectedDevices())
+				for each (auto& node in m_pCoordinator->getConnectedDevices())
 				{
 					if (!firstLine) output << std::endl;
 					output << " - '" << node->getName() << "': "
@@ -44,6 +164,13 @@ bool InteractionSystem::initialise()
 						<< ", Type " << std::hex << node->getDeviceType()
 						<< ", Parent " << std::hex << node->getParentAddress();
 					firstLine = false;
+
+					if (node->getName().find("oystick") != std::string::npos)
+					{
+						m_arrDevices.push_back(
+							std::unique_ptr<InteractionDevice>(
+								new InteractionDevice_Joystick(node->getName(), *node)));
+					}
 				}
 				LOG_INFO("Connected devices: " << std::endl << output.str());
 
@@ -68,21 +195,15 @@ bool InteractionSystem::isActive()
 }
 
 
-bool InteractionSystem::getSceneDescription(MoCapData& refData)
+void InteractionSystem::getSceneDescription(MoCapData& refData)
 {
-	return false;
+	// TODO: implement
 }
 
 
-bool InteractionSystem::getFrameData(MoCapData& refData)
+void InteractionSystem::getFrameData(MoCapData& refData)
 {
-	return false;
-}
-
-
-bool InteractionSystem::processCommand(const std::string& strCommand)
-{
-	return false;
+	// TODO: implement
 }
 
 
@@ -113,20 +234,13 @@ void InteractionSystem::receiverThread()
 		std::unique_ptr<XBeePacket_Receive> packet = m_pCoordinator->receive();
 		if (packet)
 		{
-			// IO sample?
-			if (packet->getFrameTypeID() == XBeePacket_IO_DataSample::FRAME_TYPE_ID)
+			for each (auto& device in m_arrDevices)
 			{
-				XBeePacket_IO_DataSample* sample =
-					(XBeePacket_IO_DataSample*)(packet.get());
-				LOG_INFO("IO sample from " << std::hex << sample->getSerialNumber()
-					<< ", Addr " << std::hex << sample->getNetworkAddress()
-					<< ", Mask " << std::hex << sample->getDigitalInputMask()
-					<< ", State " << std::hex << sample->getDigitalInputState()
-				);
-			}
-			else
-			{
-				LOG_WARNING("Received packet with frame type " << std::hex << packet->getFrameTypeID());
+				if (device->update(*packet))
+				{
+					// packet was parsed > no need to continue
+					break;
+				}
 			}
 		}
 	}
