@@ -60,7 +60,7 @@ bool SerialPort::open()
 		}
 		else
 		{
-			LOG_INFO("Opened serial port " << m_strPortName);
+			// LOG_INFO("Opened serial port " << m_strPortName);
 		}
 	}
 
@@ -80,7 +80,7 @@ bool SerialPort::close()
 	{
 		if (::CloseHandle(m_hPort))
 		{
-			LOG_INFO("Closed serial port " << m_strPortName);
+			// LOG_INFO("Closed serial port " << m_strPortName);
 			m_hPort = 0;
 		}
 		else
@@ -118,7 +118,7 @@ bool SerialPort::setBaudrate(DWORD baudRate)
 		// set new baudrate
 		if (::SetCommState(m_hPort, &dcb))
 		{
-			LOG_INFO("Set baudrate of serial port " << m_strPortName << " to " << baudRate);
+			// LOG_INFO("Set baudrate of serial port " << m_strPortName << " to " << baudRate);
 			success = true;
 		}
 		else 
