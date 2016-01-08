@@ -3,6 +3,8 @@
 #include "XBeeDevice.h"
 #include "MoCapData.h"
 
+#include <thread>
+
 
 class InteractionSystem
 {
@@ -21,8 +23,13 @@ public:
 
 protected:
 
+	void receiverThread();
+
+protected:
+
 	std::unique_ptr<SerialPort>      m_pSerialPort;
 	std::unique_ptr<XBeeCoordinator> m_pCoordinator;
+	std::thread                      m_receiverThread;
 
 };
 

@@ -10,7 +10,7 @@
 
 #include "Config.h"             // configuration definitions
 
-#ifdef MONITOR_MEMORY_USAGE		// memory leak monitoring
+#ifdef MONITOR_MEMORY_USAGE     // memory leak monitoring
 	// source: https://msdn.microsoft.com/en-us/library/x98tx3cf%28v=vs.140%29.aspx
 
 	#define _CRTDBG_MAP_ALLOC
@@ -25,14 +25,12 @@
 	#endif  // _DEBUG
 #endif
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-#include <windows.h>
-#include <process.h>
-
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <iterator>
 #include <string>
+#include <thread>
 #include <mutex>
 
 #include <tchar.h>
@@ -62,7 +60,8 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// configuration variables
+// Configuration variables
+//
 
 struct sConfiguration 
 {
@@ -106,11 +105,12 @@ struct sConfiguration
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// operational variables
+// Operational variables
+//
 
 // Server version information
 std::string   strServerName       = "MotionServer";
-const    char arrServerVersion[4] = { 1, 6, 0, 1 };
+const    char arrServerVersion[4] = { 1, 6, 0, 2 };
 unsigned char arrServerNatNetVersion[4]; // filled in later
 
 // Server variables
@@ -137,10 +137,10 @@ const char arrCallbackAnimation[] = { '-', '/', '|', '\\' }; // characters for t
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// function prototypes
+// Function prototypes
+//
 
 void parseCommandLine(int nArguments, _TCHAR* arrArguments[]);
-
 bool createServer();
 bool isServerRunning();
 void signalNewFrame();
@@ -148,12 +148,13 @@ bool destroyServer();
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// callback prototypes
+// Callback/Thread prototypes
+//
 
 void __cdecl callbackNatNetServerMessageHandler(int iMessageType, char* czMessage);
 int  __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPacketOut, void* pUserData);
 
-unsigned int __stdcall mocapTimerThread(void *p_thread_data);
+void mocapTimerThread(int updateInterval);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -266,7 +267,7 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 #endif
 			else if (strArg == "-interactioncontrollerport")
 			{
-				// Cortex local address
+				// COM port number for XBee interaction controller
 				config.iInteractionControllerPort = atoi(strParam1.c_str());
 			}
 		}
@@ -344,10 +345,11 @@ MoCapSystem* detectMoCapSystem()
 * Detects the XBee interaction system controller.
 *
 * @return  the controller instance
+*          (or <code>NULL</code> if no controller was found)
 */
 InteractionSystem* detectInteractionSystem()
 {
-	InteractionSystem*          pSystem = NULL;
+	InteractionSystem* pSystem = NULL;
 
 	if (config.iInteractionControllerPort > 255)
 	{
@@ -731,25 +733,23 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 
 /**
  * Timer thread for regularly sending frames
+ *
+ * @param updateInterval  the interval with which to update the data (in milliseconds)
  */
-unsigned int __stdcall mocapTimerThread(void *p_thread_data)
+void mocapTimerThread(int updateInterval)
 {
-	HANDLE event_handle = CreateEvent(NULL, FALSE, FALSE, _T("mocapTimerThread"));
-
-	while (event_handle && serverRunning)
+	std::chrono::milliseconds sleepTime = std::chrono::milliseconds(updateInterval);
+	
+	while (serverRunning)
 	{
-		if ( WaitForSingleObject(event_handle, pMoCapSystem->getUpdateInterval()) == WAIT_TIMEOUT )
+		std::this_thread::sleep_for(sleepTime);
+		// mtxMoCap.lock(); < this would collide with the lock in signalNewFrame that is probably being called
+		if (serverRunning && pMoCapSystem)
 		{
-			// mtxMoCap.lock(); < this would collide with the lock in signalNewFrame that is probably being called
-			if (serverRunning && pMoCapSystem)
-			{
-				pMoCapSystem->update();
-			}
-			// mtxMoCap.unlock();
+			pMoCapSystem->update();
 		}
+		// mtxMoCap.unlock();
 	}
-
-	return 0;
 }
 
 
@@ -790,8 +790,9 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				serverRunning = true;
 				serverRestarting = false;
 
-				unsigned int thread_id = 0;
-				_beginthreadex(NULL, 0, mocapTimerThread, NULL, 0, &thread_id);
+				//unsigned int thread_id = 0;
+				//_beginthreadex(NULL, 0, mocapTimerThread, NULL, 0, &thread_id);
+				std::thread streamingThread(mocapTimerThread, pMoCapSystem->getUpdateInterval());
 				LOG_INFO("Streaming thread started");
 
 				LOG_INFO("Motion Server started");
@@ -852,7 +853,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 					}
 				} while (serverRunning);
 
-				WaitForSingleObject(mocapTimerThread, INFINITE);
+				streamingThread.join();
 				LOG_INFO("Streaming thread stopped");
 			}
 

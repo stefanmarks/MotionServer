@@ -236,6 +236,3 @@ protected:
 	DeviceType        m_deviceType;
 };
 
-
-
-void _testXBeeDevice();
