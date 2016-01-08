@@ -624,22 +624,12 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 		case NAT_REQUEST_MODELDEF:
 		{
 			LOG_INFO("Requested scene description");
-			mtxMoCap.lock();
-			bool gotSceneDescription = (pMoCapSystem && pMocapData && pMoCapSystem->getSceneDescription(*pMocapData));
-			mtxMoCap.unlock();
-			if (gotSceneDescription)
+			mtxServer.lock();
+			if (pServer)
 			{
-				mtxServer.lock();
-				if (pServer)
-				{
-					pServer->PacketizeDataDescriptions(&(pMocapData->description), pPacketOut);
-				}
-				mtxServer.unlock();
+				pServer->PacketizeDataDescriptions(&(pMocapData->description), pPacketOut);
 			}
-			else
-			{
-				LOG_ERROR("Could not retrieve scene description");
-			}
+			mtxServer.unlock();
 			requestHandled = true;
 			break;
 		}
@@ -797,6 +787,10 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				serverRunning = true;
 				serverRestarting = false;
 
+				// prepare scene description
+				if (pMoCapSystem)       pMoCapSystem->getSceneDescription(*pMocapData);
+				if (pInteractionSystem) pInteractionSystem->getSceneDescription(*pMocapData);
+
 				//unsigned int thread_id = 0;
 				//_beginthreadex(NULL, 0, mocapTimerThread, NULL, 0, &thread_id);
 				std::thread streamingThread(mocapTimerThread, pMoCapSystem->getUpdateInterval());
@@ -829,21 +823,15 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 					}
 					else if (strCmdLowerCase == "d")
 					{
-						if (pMoCapSystem && pMocapData && pMoCapSystem->getSceneDescription(*pMocapData))
-						{
-							std::stringstream strm;
-							printModelDefinitions(strm, pMocapData->description);
-							std::cout << strm.str() << std::endl;
-						}
+						std::stringstream strm;
+						printModelDefinitions(strm, pMocapData->description);
+						std::cout << strm.str() << std::endl;
 					}
 					else if (strCmdLowerCase == "f")
 					{
-						if (pMoCapSystem && pMocapData && pMoCapSystem->getFrameData(*pMocapData))
-						{
-							std::stringstream strm;
-							printFrameOfData(strm, pMocapData->frame);
-							std::cout << strm.str() << std::endl;
-						}
+						std::stringstream strm;
+						printFrameOfData(strm, pMocapData->frame);
+						std::cout << strm.str() << std::endl;
 					}
 					else if (strCmdLowerCase == "u")
 					{

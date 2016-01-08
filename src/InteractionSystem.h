@@ -30,6 +30,13 @@ public:
 	const std::string& getName() const;
 
 	/**
+	 * Gets the number of channels.
+	 *
+	 * @return  the number of channels
+	 */
+	size_t getChannelCount() const;
+
+	/**
 	* Gets the names of the data channels.
 	*
 	* @return  the names of the data channels

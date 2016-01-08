@@ -27,17 +27,22 @@ void MoCapData::freeNatNetDescription()
 		{
 			case Descriptor_MarkerSet:
 				// Marker set -> release array of marker names
-				freeNatNetMarkerSetDescription(*description.arrDataDescriptions[dataBlockIdx].Data.MarkerSetDescription);
+				freeNatNetMarkerSetDescription(description.arrDataDescriptions[dataBlockIdx].Data.MarkerSetDescription);
 				break;
 
 			case Descriptor_RigidBody:
 				// Rigid body -> release data
-				freeNatNetRigidBodyDescription(*description.arrDataDescriptions[dataBlockIdx].Data.RigidBodyDescription);
+				freeNatNetRigidBodyDescription(description.arrDataDescriptions[dataBlockIdx].Data.RigidBodyDescription);
 				break;
 
 			case Descriptor_Skeleton:
 				// Skeleton -> release data
-				freeNatNetSkeletonDescription(*description.arrDataDescriptions[dataBlockIdx].Data.SkeletonDescription);
+				freeNatNetSkeletonDescription(description.arrDataDescriptions[dataBlockIdx].Data.SkeletonDescription);
+				break;
+
+			case Descriptor_ForcePlate:
+				// Force plate -> release data
+				freeNatNetForcePlateDescription(description.arrDataDescriptions[dataBlockIdx].Data.ForcePlateDescription);
 				break;
 
 			default:
@@ -49,30 +54,38 @@ void MoCapData::freeNatNetDescription()
 }
 
 
-void MoCapData::freeNatNetMarkerSetDescription(sMarkerSetDescription& refMarkerSet)
+void MoCapData::freeNatNetMarkerSetDescription(sMarkerSetDescription* pMarkerSet)
 {
-	for (int mIdx = 0; mIdx < refMarkerSet.nMarkers; mIdx++)
+	// release marker names
+	for (int mIdx = 0; mIdx < pMarkerSet->nMarkers; mIdx++)
 	{
-		delete[] refMarkerSet.szMarkerNames[mIdx];
-		refMarkerSet.szMarkerNames[mIdx] = NULL;
+		delete[] pMarkerSet->szMarkerNames[mIdx];
 	}
 	// release array
-	delete[] refMarkerSet.szMarkerNames;
-	refMarkerSet.szMarkerNames = NULL;
-	refMarkerSet.szName[0] = '\0';
-	refMarkerSet.nMarkers = 0;
+	delete[] pMarkerSet->szMarkerNames;
+	// release structure
+	delete pMarkerSet;
 }
 
 
-void MoCapData::freeNatNetRigidBodyDescription(sRigidBodyDescription& refRigidBody)
+void MoCapData::freeNatNetRigidBodyDescription(sRigidBodyDescription* pRigidBody)
 {
-	// nothing to release
+	// release structure
+	delete pRigidBody;
 }
 
 
-void MoCapData::freeNatNetSkeletonDescription(sSkeletonDescription& refSkeleton)
+void MoCapData::freeNatNetSkeletonDescription(sSkeletonDescription* pSkeleton)
 {
-	// nothing to release
+	// release structure
+	delete pSkeleton;
+}
+
+
+void MoCapData::freeNatNetForcePlateDescription(sForcePlateDescription* pForcePlate)
+{
+	// release structure
+	delete pForcePlate;
 }
 
 
@@ -98,6 +111,13 @@ void MoCapData::freeNatNetFrameData()
 		freeNatNetSkeletonData(frame.Skeletons[iSkeletonIdx]);
 	}
 	frame.nSkeletons = 0;
+
+	// delete force plate data
+	for (int iForcePlateIdx = 0; iForcePlateIdx < frame.nForcePlates; iForcePlateIdx++)
+	{
+		freeNatNetForcePlateData(frame.ForcePlates[iForcePlateIdx]);
+	}
+	frame.nForcePlates = 0;
 
 	// delete unknown marker data
 	delete[] frame.OtherMarkers;
@@ -133,4 +153,11 @@ void MoCapData::freeNatNetSkeletonData(sSkeletonData& refSkeleton)
 	refSkeleton.nRigidBodies = 0;
 	refSkeleton.skeletonID = 0;
 }
+
+
+void MoCapData::freeNatNetForcePlateData(sForcePlateData& refForcePlate)
+{
+	refForcePlate.nChannels = 0;
+}
+
 

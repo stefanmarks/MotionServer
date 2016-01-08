@@ -20,6 +20,12 @@ const std::string& InteractionDevice::getName() const
 }
 
 
+size_t InteractionDevice::getChannelCount() const
+{
+	return m_arrChannels.size();
+}
+
+
 const std::vector<std::string>& InteractionDevice::getChannelNames() const
 {
 	return m_arrChannelNames;
@@ -197,7 +203,29 @@ bool InteractionSystem::isActive()
 
 void InteractionSystem::getSceneDescription(MoCapData& refData)
 {
-	// TODO: implement
+	int plateID = 1;
+
+	for each ( auto& device in m_arrDevices )
+	{
+		sForcePlateDescription* pForce = new sForcePlateDescription();
+		memset(pForce, 0, sizeof(*pForce));
+
+		pForce->ID = plateID; plateID++; // plate ID
+		strncpy_s(pForce->strSerialNo, device->getName().c_str(), sizeof(pForce->strSerialNo)); // plate name
+		pForce->nChannels = device->getChannelCount(); // channel count
+		for (size_t chnIdx = 0; chnIdx < device->getChannelCount(); chnIdx++)
+		{
+			strncpy_s(
+				pForce->szChannelNames[chnIdx], 
+				device->getChannelNames()[chnIdx].c_str(), 
+				sizeof(pForce->szChannelNames[chnIdx]));
+		}
+
+		sDataDescription& refDescription = refData.description.arrDataDescriptions[refData.description.nDataDescriptions];
+		refDescription.type = DataDescriptors::Descriptor_ForcePlate;
+		refDescription.Data.ForcePlateDescription = pForce;
+		refData.description.nDataDescriptions++; // that was one desciption more
+	}
 }
 
 

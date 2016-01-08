@@ -105,7 +105,15 @@ void printModelDefinitions(std::ostream& refOutput, sDataDescriptions& refData)
 
 			case Descriptor_ForcePlate:
 			{
-				refOutput << "Force plate descriptor" << std::endl;
+				sForcePlateDescription* pFP = refData.arrDataDescriptions[dIdx].Data.ForcePlateDescription;
+				refOutput << "Force Plate '" << pFP->strSerialNo << "' "
+					<< "(ID: " << pFP->ID
+					<< ", #Channels: " << pFP->nChannels
+					<< ")" << std::endl;
+				for (int cIdx = 0; cIdx < pFP->nChannels; cIdx++)
+				{
+					refOutput << "\tChannel " << cIdx << ": '" << pFP->szChannelNames[cIdx] << "'" << std::endl;
+				}
 				break;
 			}
 

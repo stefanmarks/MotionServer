@@ -16,14 +16,16 @@ public:
 private:
 	// Internal methods for freeing dynamically allocated data structures
 	void freeNatNetDescription();
-	void freeNatNetMarkerSetDescription(sMarkerSetDescription& refMarkerSet);
-	void freeNatNetRigidBodyDescription(sRigidBodyDescription& refRigidBody);
-	void freeNatNetSkeletonDescription(sSkeletonDescription& refSkeleton);
+	void freeNatNetMarkerSetDescription(sMarkerSetDescription* pMarkerSet);
+	void freeNatNetRigidBodyDescription(sRigidBodyDescription* pRigidBody);
+	void freeNatNetSkeletonDescription(sSkeletonDescription* pSkeleton);
+	void freeNatNetForcePlateDescription(sForcePlateDescription* pForcePlate);
 
 	void freeNatNetFrameData();
 	void freeNatNetMarkerSetData(sMarkerSetData& refMarkerSetData);
 	void freeNatNetRigidBodySetData(sRigidBodyData& refBodySetData);
 	void freeNatNetSkeletonData(sSkeletonData& refSkeleton);
+	void freeNatNetForcePlateData(sForcePlateData& refForcePlate);
 
 public:
 	sDataDescriptions description;
