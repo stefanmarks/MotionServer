@@ -57,7 +57,7 @@ public:
 	 *
 	 * @return the name of the device
 	 */
-	std::string getName() const;
+	const std::string& getName() const;
 
 
 	/**
@@ -163,7 +163,7 @@ public:
 	 *
 	 * @return  the list of connected devices
 	 */
-	const std::vector<XBeeRemoteDevice*>& getConnectedDevices() const;
+	const std::vector<std::unique_ptr<XBeeRemoteDevice>>& getConnectedDevices() const;
 
 
 protected:
@@ -183,7 +183,7 @@ protected:
 	XBeeReadBuffer   m_bufIn;        // buffer for incoming data
 	XBeeWriteBuffer  m_bufOut;       // buffer for outgoing data
 
-	std::vector<XBeeRemoteDevice*> m_arrNodes;  // connected XBee nodes
+	std::vector<std::unique_ptr<XBeeRemoteDevice>> m_arrNodes;  // connected XBee nodes
 
 };
 

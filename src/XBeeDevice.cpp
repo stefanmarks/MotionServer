@@ -32,7 +32,7 @@ bool XBeeDevice::isValid() const
 }
 
 
-std::string XBeeDevice::getName() const
+const std::string& XBeeDevice::getName() const
 {
 	return m_strName;
 }
@@ -130,10 +130,7 @@ XBeeCoordinator::XBeeCoordinator(SerialPort& refPort) :
 XBeeCoordinator::~XBeeCoordinator()
 {
 	// clean up the list of nodes
-	for each (auto node in m_arrNodes)
-	{
-		delete node;
-	}
+	m_arrNodes.clear();
 
 	// no need to hug the serial port any longer
 	m_serialPort.close();
@@ -306,8 +303,9 @@ int XBeeCoordinator::scanDevices()
 	if (process(command, response))
 	{
 		// parse discovery results
-		XBeeRemoteDevice* pDevice = new XBeeRemoteDevice(*this, response.getRawData());
-		m_arrNodes.push_back(pDevice);
+		m_arrNodes.push_back(
+			std::unique_ptr<XBeeRemoteDevice>(
+				new XBeeRemoteDevice(*this, response.getRawData())));
 	}
 
 	m_serialPort.setTimeout(oldTimeout);
@@ -316,7 +314,7 @@ int XBeeCoordinator::scanDevices()
 }
 
 
-const std::vector<XBeeRemoteDevice*>&  XBeeCoordinator::getConnectedDevices() const
+const std::vector<std::unique_ptr<XBeeRemoteDevice>>&  XBeeCoordinator::getConnectedDevices() const
 {
 	return m_arrNodes;
 }
