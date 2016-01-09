@@ -110,7 +110,7 @@ struct sConfiguration
 
 // Server version information
 std::string   strServerName       = "MotionServer";
-const uint8_t arrServerVersion[4] = { 1, 6, 0, 2 };
+const uint8_t arrServerVersion[4] = { 1, 6, 1, 0 };
       uint8_t arrServerNatNetVersion[4]; // filled in later
 
 // Server variables
