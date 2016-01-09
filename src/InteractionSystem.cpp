@@ -203,15 +203,21 @@ bool InteractionSystem::isActive()
 
 void InteractionSystem::getSceneDescription(MoCapData& refData)
 {
-	int plateID = 1;
+	int plateID = 0;
 
+	// fill in each device
 	for each ( auto& device in m_arrDevices )
 	{
+		// create and zero new description structure
 		sForcePlateDescription* pForce = new sForcePlateDescription();
 		memset(pForce, 0, sizeof(*pForce));
-
-		pForce->ID = plateID; plateID++; // plate ID
-		strncpy_s(pForce->strSerialNo, device->getName().c_str(), sizeof(pForce->strSerialNo)); // plate name
+		
+		// plate ID (start counting at 1)
+		plateID++; pForce->ID = plateID; 
+		// plate serial#/name
+		strncpy_s(pForce->strSerialNo, device->getName().c_str(), sizeof(pForce->strSerialNo));
+		
+		// channel information
 		pForce->nChannels = device->getChannelCount(); // channel count
 		for (size_t chnIdx = 0; chnIdx < device->getChannelCount(); chnIdx++)
 		{
@@ -231,7 +237,25 @@ void InteractionSystem::getSceneDescription(MoCapData& refData)
 
 void InteractionSystem::getFrameData(MoCapData& refData)
 {
-	// TODO: implement
+	refData.frame.nForcePlates = m_arrDevices.size(); // number of plates/devices
+	
+	int plateID = 0;
+	// fill in each device channel values
+	for each (auto& device in m_arrDevices)
+	{
+		sForcePlateData& refForce = refData.frame.ForcePlates[plateID];
+		plateID++; refForce.ID = plateID; // plate ID
+		refForce.nChannels = device->getChannelCount(); // channel count 
+
+		// values
+		for (size_t chnIdx = 0; chnIdx < device->getChannelCount(); chnIdx++)
+		{
+			refForce.ChannelData[chnIdx].nFrames   = 1; // 1 subframe
+			refForce.ChannelData[chnIdx].Values[0] = device->getChannelValues()[chnIdx];
+		}
+
+		refForce.params = 0; // parameters
+	}
 }
 
 

@@ -498,6 +498,11 @@ void signalNewFrame()
 	{
 		if (pMoCapSystem->getFrameData(*pMocapData))
 		{
+			if (pInteractionSystem)
+			{
+				pInteractionSystem->getFrameData(*pMocapData);
+			}
+
 			mtxServer.lock();
 			if (pServer)
 			{
