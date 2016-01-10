@@ -7,6 +7,26 @@
 
 
 /**
+ * Class for a single device data channel with a name and a value.
+ */
+class Channel
+{
+public:
+	/**
+	 * Creates a channel with a given name and a default value of 0.
+	 *
+	 * @param refName  the name of the channel
+	 */
+	Channel(const std::string& refName) : name(refName), value(0.0f) { };
+
+public:
+	const std::string name;
+	      float       value;
+};
+
+
+
+/**
  * Abstract base class for a single interaction device and its data channels.
  */
 class InteractionDevice
@@ -37,18 +57,11 @@ public:
 	size_t getChannelCount() const;
 
 	/**
-	* Gets the names of the data channels.
-	*
-	* @return  the names of the data channels
-	*/
-	const std::vector<std::string>& getChannelNames() const;
-
-	/**
-	* Gets the values of the data channels
-	*
-	* @return  the values of the data channels
-	*/
-	const std::vector<float>& getChannelValues() const;
+	 * Gets the list of data channels
+	 *
+	 * @return  the list of data channels
+	 */
+	const std::vector<Channel>& getChannels() const;
 
 	/**
 	 * Updates the data from a received packet.
@@ -61,9 +74,8 @@ public:
 
 protected:
 
-	std::string              m_deviceName;
-	std::vector<std::string> m_arrChannelNames;
-	std::vector<float>       m_arrChannels;
+	std::string          m_deviceName;
+	std::vector<Channel> m_arrChannels;
 
 };
 

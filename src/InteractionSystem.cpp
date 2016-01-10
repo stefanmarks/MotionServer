@@ -26,13 +26,7 @@ size_t InteractionDevice::getChannelCount() const
 }
 
 
-const std::vector<std::string>& InteractionDevice::getChannelNames() const
-{
-	return m_arrChannelNames;
-}
-
-
-const std::vector<float>& InteractionDevice::getChannelValues() const
+const std::vector<Channel>& InteractionDevice::getChannels() const
 {
 	return m_arrChannels;
 }
@@ -45,14 +39,14 @@ InteractionDevice_Joystick::InteractionDevice_Joystick(const std::string& name, 
 	InteractionDevice(name),
 	m_device(refDevice)
 {
-	m_arrChannelNames.push_back("button1"); m_arrChannels.push_back(0);
-	m_arrChannelNames.push_back("button2"); m_arrChannels.push_back(0);
-	m_arrChannelNames.push_back("button3"); m_arrChannels.push_back(0);
-	m_arrChannelNames.push_back("button4"); m_arrChannels.push_back(0);
-	m_arrChannelNames.push_back("button5"); m_arrChannels.push_back(0);
-	m_arrChannelNames.push_back("button6"); m_arrChannels.push_back(0);
-	m_arrChannelNames.push_back("axis1");   m_arrChannels.push_back(0);
-	m_arrChannelNames.push_back("axis2");   m_arrChannels.push_back(0);
+	m_arrChannels.push_back(Channel("button1"));
+	m_arrChannels.push_back(Channel("button2"));
+	m_arrChannels.push_back(Channel("button3"));
+	m_arrChannels.push_back(Channel("button4"));
+	m_arrChannels.push_back(Channel("button5"));
+	m_arrChannels.push_back(Channel("button6"));
+	m_arrChannels.push_back(Channel("axis1"));
+	m_arrChannels.push_back(Channel("axis2"));
 }
 
 
@@ -75,45 +69,29 @@ bool InteractionDevice_Joystick::update(const XBeePacket_Receive& refPacket)
 			bool btnStick     = (pinState & 0x80) == 0; // pin 7: Thumbstick moved
 			uint8_t bitsThumb = (pinState & 0x30) >> 4; // pins 4 and 5: encoded thumb button/stick direction
 
-			m_arrChannels[0] = btnPrimary   ? 1.0f : 0;
-			m_arrChannels[1] = btnSecondary ? 1.0f : 0;
+			m_arrChannels[0].value = btnPrimary   ? 1.0f : 0;
+			m_arrChannels[1].value = btnSecondary ? 1.0f : 0;
 
-			m_arrChannels[2] = (btnThumb & (bitsThumb == 3)) ? 1.0f : 0; // BL
-			m_arrChannels[3] = (btnThumb & (bitsThumb == 2)) ? 1.0f : 0; // BR
-			m_arrChannels[4] = (btnThumb & (bitsThumb == 1)) ? 1.0f : 0; // TL
-			m_arrChannels[5] = (btnThumb & (bitsThumb == 0)) ? 1.0f : 0; // TR
+			m_arrChannels[2].value = (btnThumb & (bitsThumb == 3)) ? 1.0f : 0; // BL
+			m_arrChannels[3].value = (btnThumb & (bitsThumb == 2)) ? 1.0f : 0; // BR
+			m_arrChannels[4].value = (btnThumb & (bitsThumb == 1)) ? 1.0f : 0; // TL
+			m_arrChannels[5].value = (btnThumb & (bitsThumb == 0)) ? 1.0f : 0; // TR
 
+			float x = 0;
+			float y = 0;
 			if (btnStick)
 			{
 				// thumbstick pressed > translate into axis
 				switch (bitsThumb)
 				{
-				case 0: // forward
-					m_arrChannels[6] = 0;
-					m_arrChannels[7] = +1;
-					break;
-
-				case 1: // left
-					m_arrChannels[6] = -1;
-					m_arrChannels[7] = 0;
-					break;
-
-				case 2: // right
-					m_arrChannels[6] = +1;
-					m_arrChannels[7] = 0;
-					break;
-
-				case 3: // backwards
-					m_arrChannels[6] = 0;
-					m_arrChannels[7] = -1;
-					break;
+					case 0: y = +1; break; // forward
+					case 1: x = -1; break; // left
+					case 2: x = +1; break; // right
+					case 3: y = -1; break; // backwards
 				}
 			}
-			else
-			{
-				m_arrChannels[6] = 0;
-				m_arrChannels[7] = 0;
-			}
+			m_arrChannels[6].value = x;
+			m_arrChannels[7].value = y;
 
 			/*
 			LOG_INFO("update " << std::hex << (int) pinState << " " << btnPrimary << " " << btnSecondary
@@ -223,7 +201,7 @@ void InteractionSystem::getSceneDescription(MoCapData& refData)
 		{
 			strncpy_s(
 				pForce->szChannelNames[chnIdx], 
-				device->getChannelNames()[chnIdx].c_str(), 
+				device->getChannels()[chnIdx].name.c_str(), 
 				sizeof(pForce->szChannelNames[chnIdx]));
 		}
 
@@ -244,17 +222,18 @@ void InteractionSystem::getFrameData(MoCapData& refData)
 	for each (auto& device in m_arrDevices)
 	{
 		sForcePlateData& refForce = refData.frame.ForcePlates[plateID];
-		plateID++; refForce.ID = plateID; // plate ID
-		refForce.nChannels = device->getChannelCount(); // channel count 
-
+		// plate ID (start counting at 1)
+		plateID++; refForce.ID = plateID; 
+		// channel count
+		refForce.nChannels = device->getChannelCount();  
 		// values
 		for (size_t chnIdx = 0; chnIdx < device->getChannelCount(); chnIdx++)
 		{
 			refForce.ChannelData[chnIdx].nFrames   = 1; // 1 subframe
-			refForce.ChannelData[chnIdx].Values[0] = device->getChannelValues()[chnIdx];
+			refForce.ChannelData[chnIdx].Values[0] = device->getChannels()[chnIdx].value;
 		}
-
-		refForce.params = 0; // parameters
+		// parameters
+		refForce.params = 0; 
 	}
 }
 
