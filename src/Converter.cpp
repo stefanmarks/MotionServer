@@ -64,17 +64,27 @@ void convertCortexDescriptionToNatNet(sBodyDefs& refCortex, sDataDescriptions& r
 		// create markerset description and markerset data
 		sMarkerSetDescription* pMarkerSetDescr = new sMarkerSetDescription;
 		sMarkerSetData&        refMarkerSetData = refFrame.MocapData[idxMarkerSet];
-		strncpy_s(pMarkerSetDescr->szName, bodyDef.szName, sizeof(pMarkerSetDescr->szName)); // markerset name
+		
+		// markerset name
+		strncpy_s(pMarkerSetDescr->szName, bodyDef.szName, sizeof(pMarkerSetDescr->szName));
 		strncpy_s(refMarkerSetData.szName, bodyDef.szName, sizeof(refMarkerSetData.szName));
+		
+		// number of markers
 		int nMarkers = bodyDef.nMarkers;
-		pMarkerSetDescr->nMarkers = nMarkers; // number of markers
+		pMarkerSetDescr->nMarkers = nMarkers;
 		refMarkerSetData.nMarkers = nMarkers;
-		pMarkerSetDescr->szMarkerNames = new char*[nMarkers]; // array of marker names
-		refMarkerSetData.Markers = new MarkerData[nMarkers];  // array of marker data
+
+		// array of marker names
+		pMarkerSetDescr->szMarkerNames = new char*[nMarkers]; 
 		for (int mIdx = 0; mIdx < bodyDef.nMarkers; mIdx++)
 		{
-			pMarkerSetDescr->szMarkerNames[mIdx] = _strdup(bodyDef.szMarkerNames[mIdx]); // marker names
+			pMarkerSetDescr->szMarkerNames[mIdx] = _strdup(bodyDef.szMarkerNames[mIdx]);
 		}
+		
+		// array of marker data
+		refMarkerSetData.Markers = new MarkerData[nMarkers];  
+
+		// add to description block
 		refDescr.arrDataDescriptions[idxDataBlock].type = Descriptor_MarkerSet;
 		refDescr.arrDataDescriptions[idxDataBlock].Data.MarkerSetDescription = pMarkerSetDescr;
 		idxDataBlock++;
@@ -83,12 +93,10 @@ void convertCortexDescriptionToNatNet(sBodyDefs& refCortex, sDataDescriptions& r
 		sHierarchy& refSkeleton = bodyDef.Hierarchy;
 		if (refSkeleton.nSegments == 1)
 		{
-			sHierarchy& refHierarchy = bodyDef.Hierarchy;
-
 			// one bone skeleton -> treat as rigid body
 			// create rigid body description
 			sRigidBodyDescription* pRigidBodyDescr  = new sRigidBodyDescription;
-			strncpy_s(pRigidBodyDescr->szName, refHierarchy.szSegmentNames[0], sizeof(pRigidBodyDescr->szName)); // rigid body name
+			strncpy_s(pRigidBodyDescr->szName, refSkeleton.szSegmentNames[0], sizeof(pRigidBodyDescr->szName)); // rigid body name
 			pRigidBodyDescr->ID = iBodyIdx; // rigid body ID = actor ID
 			pRigidBodyDescr->parentID = -1; // no parent
 			pRigidBodyDescr->offsetx = 0;   // the offset does not exist in Cortex data
@@ -221,10 +229,13 @@ void _convertCortexSegmentToNatNet(double refCortex[], sRigidBodyData& refNatNet
 		Quaternion rotY(0, 1, 0, (float)RADIANS(refCortex[4])); // rotY
 		Quaternion rotZ(0, 0, 1, (float)RADIANS(refCortex[5])); // rotZ
 		rot.mult(rotZ).mult(rotY).mult(rotX);
+
+		refNatNet.params = 0x01; // tracking OK
 	}
 	else
 	{
 		// segment data not available -> use origin and neutral pose
+		refNatNet.params = 0x00; // tracking not OK
 	}
 
 	refNatNet.x = pos.x;
