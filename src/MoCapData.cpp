@@ -61,8 +61,11 @@ void MoCapData::freeNatNetMarkerSetDescription(sMarkerSetDescription* pMarkerSet
 	{
 		delete[] pMarkerSet->szMarkerNames[mIdx];
 	}
-	// release array
+	
+	// release marker names array
 	delete[] pMarkerSet->szMarkerNames;
+	pMarkerSet->szMarkerNames = NULL;
+	
 	// release structure
 	delete pMarkerSet;
 }
@@ -129,7 +132,6 @@ void MoCapData::freeNatNetMarkerSetData(sMarkerSetData& refMarkerSetData)
 {
 	delete[] refMarkerSetData.Markers;
 	refMarkerSetData.Markers = NULL;
-	refMarkerSetData.szName[0] = '\0';
 	refMarkerSetData.nMarkers = 0;
 }
 
@@ -148,10 +150,13 @@ void MoCapData::freeNatNetRigidBodySetData(sRigidBodyData& refBodySetData)
 
 void MoCapData::freeNatNetSkeletonData(sSkeletonData& refSkeleton)
 {
+	for (int bIdx = 0; bIdx < refSkeleton.nRigidBodies; bIdx++)
+	{
+		freeNatNetRigidBodySetData(refSkeleton.RigidBodyData[bIdx]);
+	}
 	delete[] refSkeleton.RigidBodyData;
 	refSkeleton.RigidBodyData = NULL;
-	refSkeleton.nRigidBodies = 0;
-	refSkeleton.skeletonID = 0;
+	refSkeleton.nRigidBodies  = 0;
 }
 
 
