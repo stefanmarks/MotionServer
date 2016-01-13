@@ -39,6 +39,7 @@ const sRigidBodyMovementParams RIGID_BODY_PARAMS[] =
 	{ "RotZ-",    2, -0.5, -1.0,   0, 1.0f / -10 },
 };
 
+const int MARKER_COUNT     = 4;
 const int RIGID_BODY_COUNT = sizeof(RIGID_BODY_PARAMS) / sizeof(RIGID_BODY_PARAMS[0]);
 const int SKELETON_COUNT   = 0;
 
@@ -56,10 +57,9 @@ bool MoCapSimulator::initialise()
 		fTime = 0;
 		iFrame = 0;
 
-		arrPos = new Vector3D[RIGID_BODY_COUNT];
-		arrRot = new Quaternion[RIGID_BODY_COUNT];
-
-		arrTrackingLostCounter = new int[RIGID_BODY_COUNT];
+		arrPos.resize(RIGID_BODY_COUNT);
+		arrRot.resize(RIGID_BODY_COUNT);
+		arrTrackingLostCounter.resize(RIGID_BODY_COUNT);
 		for (int i = 0; i < RIGID_BODY_COUNT; i++)
 		{
 			arrTrackingLostCounter[i] = 0;
@@ -121,26 +121,6 @@ bool MoCapSimulator::update()
 				break;
 			}
 		}
-		/*
-		sBodyData& data = frameData.BodyData[i];
-
-		// update marker data
-		for (int m = 0; m < data.nMarkers; m++)
-		{
-			data.Markers[m][0] = arrPos[i].x + (rand() * 0.1f / RAND_MAX - 0.05f);
-			data.Markers[m][1] = arrPos[i].y + (rand() * 0.1f / RAND_MAX - 0.05f);
-			data.Markers[m][2] = arrPos[i].z + (rand() * 0.1f / RAND_MAX - 0.05f);
-		}
-
-		// update rigid body data
-		tSegmentData& seg = data.Segments[0];
-		seg[0] = arrPos[i].x;
-		seg[1] = arrPos[i].y;
-		seg[2] = arrPos[i].z;
-		seg[3] = arrRot[i].x;
-		seg[4] = arrRot[i].y;
-		seg[5] = arrRot[i].z;
-		*/
 
 		if (trackingUnreliable)
 		{
@@ -171,16 +151,29 @@ bool MoCapSimulator::getSceneDescription(MoCapData& refData)
 	int descrIdx = 0;
 	for (int b = 0; b < RIGID_BODY_COUNT; b++)
 	{
+		// create markerset description and frame
 		sMarkerSetDescription* pMarkerDesc = new sMarkerSetDescription();
-		// fill in description structure
-		pMarkerDesc->nMarkers = 0;
-		strcpy_s(pMarkerDesc->szName, sizeof(pMarkerDesc->szName), RIGID_BODY_PARAMS[b].szName);
-		
-		// pre-fill in frame structure for marker sets
-		sMarkerSetData& msData = refData.frame.MocapData[b];
-		msData.nMarkers = 0;
-		strcpy_s(msData.szName, sizeof(msData.szName), pMarkerDesc->szName);
+		sMarkerSetData&        msData      = refData.frame.MocapData[b];
 
+		// name of marker set
+		strcpy_s(pMarkerDesc->szName, sizeof(pMarkerDesc->szName), RIGID_BODY_PARAMS[b].szName);
+		strcpy_s(msData.szName,       sizeof(msData.szName),       pMarkerDesc->szName);
+
+		// number of markers
+		pMarkerDesc->nMarkers = MARKER_COUNT;
+		msData.nMarkers       = MARKER_COUNT;
+
+		// names of markers
+		pMarkerDesc->szMarkerNames = new char*[MARKER_COUNT];
+		msData.Markers             = new MarkerData[MARKER_COUNT];
+		for (int m = 0; m < MARKER_COUNT; m++)
+		{
+			char czMarkerName[10];
+			sprintf_s(czMarkerName, sizeof(czMarkerName), "%02d", m + 1);
+			pMarkerDesc->szMarkerNames[m] = _strdup(czMarkerName);
+		}
+
+		// add to description list
 		refData.description.arrDataDescriptions[descrIdx].type = Descriptor_MarkerSet;
 		refData.description.arrDataDescriptions[descrIdx].Data.MarkerSetDescription = pMarkerDesc;
 		descrIdx++;
@@ -229,7 +222,7 @@ bool MoCapSimulator::getSceneDescription(MoCapData& refData)
 
 	refData.frame.nForcePlates = 0;
 
-	refData.frame.fLatency = 0;
+	refData.frame.fLatency = 0.01f; // simulate 10ms
 	refData.frame.Timecode = 0;
 	refData.frame.TimecodeSubframe = 0;
 
@@ -243,14 +236,24 @@ bool MoCapSimulator::getFrameData(MoCapData& refData)
 
 	for (int b = 0; b < RIGID_BODY_COUNT; b++)
 	{
+		// simulate tracking loss
 		bool trackingLost = false;
-
 		if (arrTrackingLostCounter[b] > 0)
 		{
 			trackingLost = true;
 			arrTrackingLostCounter[b]--;
 		}
 
+		// update marker data
+		sMarkerSetData& msData = refData.frame.MocapData[b];
+		for (int m = 0; m < msData.nMarkers; m++)
+		{
+			msData.Markers[m][0] = arrPos[b].x + (rand() * 0.1f / RAND_MAX - 0.05f);
+			msData.Markers[m][1] = arrPos[b].y + (rand() * 0.1f / RAND_MAX - 0.05f);
+			msData.Markers[m][2] = arrPos[b].z + (rand() * 0.1f / RAND_MAX - 0.05f);
+		}
+
+		// update rigid body data
 		sRigidBodyData& rbData = refData.frame.RigidBodies[b];
 		rbData.ID = b;
 		rbData.x  = trackingLost ? 0 : arrPos[b].x;
@@ -263,6 +266,7 @@ bool MoCapSimulator::getFrameData(MoCapData& refData)
 
 		rbData.nMarkers  = 0;
 		rbData.MeanError = 0;
+		rbData.params    = 0x01; // tracking OK
 	}
 
 	return true;
@@ -273,10 +277,16 @@ bool MoCapSimulator::processCommand(const std::string& strCommand)
 {
 	bool processed = false;
 	
-	if ( strCommand == "u" )
+	if ( strCommand == "lossy" )
 	{
-		trackingUnreliable = !trackingUnreliable;
-		LOG_INFO("Tracking " << (trackingUnreliable ? "unreliable" : "reliable"));
+		trackingUnreliable = true;
+		LOG_INFO("Tracking unreliable/lossy");
+		processed = true;
+	}
+	else if (strCommand == "lossless")
+	{
+		trackingUnreliable = false;
+		LOG_INFO("Tracking reliable/lossless");
 		processed = true;
 	}
 
@@ -288,11 +298,9 @@ bool MoCapSimulator::deinitialise()
 {
 	if (initialised)
 	{
-		delete[] arrPos; arrPos = NULL;
-		delete[] arrRot; arrRot = NULL;
+		// nothing much to do here
 
 		LOG_INFO("Deinitialised");
-
 		initialised = false;
 	}
 	return !initialised;

@@ -80,4 +80,8 @@ public:
 	 * @return <code>true</code> when the system was deinitialised successfully
 	 */
 	virtual bool deinitialise() = 0;
+
+
+	virtual ~MoCapSystem() { };
+
 };

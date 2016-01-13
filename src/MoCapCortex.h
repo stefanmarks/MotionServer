@@ -18,7 +18,7 @@ class MoCapCortex : public MoCapSystem
 {
 public:
 	MoCapCortex(const std::string &strCortexAddress, const std::string &strLocalAddress);
-	~MoCapCortex();
+	virtual ~MoCapCortex();
 
 public:
 	virtual bool initialise();
@@ -31,11 +31,8 @@ public:
 	virtual bool deinitialise();
 
 private:
-	bool getMoCapSceneDescription();
-
-private:
 	bool         initialised;
-    std::string  strCortexAddress;
+	std::string  strCortexAddress;
 	std::string  strLocalAddress;
 
 	sHostInfo*   pCortexInfo;

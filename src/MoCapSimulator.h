@@ -7,11 +7,14 @@
 #include "MoCapSystem.h"
 #include "VectorMath.h"
 
+#include <vector>
+
+
 class MoCapSimulator : public MoCapSystem
 {
 public:
 	MoCapSimulator();
-	~MoCapSimulator();
+	virtual ~MoCapSimulator();
 
 public:
 	virtual bool initialise();
@@ -24,18 +27,13 @@ public:
 	virtual bool deinitialise();
 
 private:
-	void initBody(int idx);
+	bool                    initialised;
+	int                     iFrame;
+	float                   fTime;
+	std::vector<Vector3D>   arrPos;
+	std::vector<Quaternion> arrRot;
 
-private:
-	bool                   initialised;
-	int                    iFrame;
-	float                  fTime;
-	Vector3D*              arrPos;
-	Quaternion*            arrRot;
-
-	bool                   trackingUnreliable;
-	int*                   arrTrackingLostCounter;
-
-	sRigidBodyDescription* arrRigidBodyDesc;
+	bool                    trackingUnreliable;
+	std::vector<int>        arrTrackingLostCounter;
 };
 
