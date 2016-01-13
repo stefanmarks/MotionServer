@@ -110,7 +110,7 @@ struct sConfiguration
 
 // Server version information
 std::string   strServerName       = "MotionServer";
-const uint8_t arrServerVersion[4] = { 1, 6, 1, 0 };
+const uint8_t arrServerVersion[4] = { 1, 6, 3, 0 };
       uint8_t arrServerNatNetVersion[4]; // filled in later
 
 // Server variables
@@ -350,7 +350,7 @@ MoCapSystem* detectMoCapSystem()
 InteractionSystem* detectInteractionSystem()
 {
 	InteractionSystem* pSystem = NULL;
-
+	
 	if (config.iInteractionControllerPort > 255)
 	{
 		// invalid > don't use
@@ -426,10 +426,10 @@ bool createServer()
 	// print version info
 	pServer->NatNetVersion(arrServerNatNetVersion);
 	LOG_INFO("NatNet Server version v"
-		     << (int) arrServerNatNetVersion[0] << "."
-			 << (int) arrServerNatNetVersion[1] << "."
-		     << (int) arrServerNatNetVersion[2] << "."
-			 << (int) arrServerNatNetVersion[3]);
+	         << (int) arrServerNatNetVersion[0] << "."
+	         << (int) arrServerNatNetVersion[1] << "."
+	         << (int) arrServerNatNetVersion[2] << "."
+	         << (int) arrServerNatNetVersion[3]);
 
 	// set callbacks
 	pServer->SetMessageResponseCallback(callbackNatNetServerRequestHandler);
