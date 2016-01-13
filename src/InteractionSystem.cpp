@@ -146,7 +146,8 @@ bool InteractionSystem::initialise()
 						<< "Serial# " << std::hex << node->getSerialNumber()
 						<< ", Address " << std::hex << node->getNetworkAddress()
 						<< ", Type " << std::hex << node->getDeviceType()
-						<< ", Parent " << std::hex << node->getParentAddress();
+						<< ", Parent " << std::hex << node->getParentAddress()
+						<< ", Battery " << std::hex << (roundf(node->getBatteryVoltage() * 10) / 10) << "V";
 					firstLine = false;
 
 					if (node->getName().find("oystick") != std::string::npos)

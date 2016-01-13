@@ -229,10 +229,19 @@ public:
 	 */
 	DeviceType getDeviceType() const;
 
+	/**
+	 * Gets the level of the battery in Volts.
+	 *
+	 * @return  the voltage of the battery
+	 */
+	float getBatteryVoltage() const;
+
 protected:
 
 	XBeeCoordinator&  m_coordinator;
 	uint16_t          m_parentAddress;
 	DeviceType        m_deviceType;
+	float             m_batteryVoltage;
+
 };
 

@@ -392,6 +392,16 @@ XBeeRemoteDevice::XBeeRemoteDevice(XBeeCoordinator& refCoordinator, const XBeeRe
 	//	STATUS<CR>(1 Byte: Reserved)
 	//	PROFILE_ID<CR>(2 Bytes)
 	//	MANUFACTURER_ID<CR>(2 Bytes)
+
+	// read battery voltage
+	XBeePacket_RemoteAT_Command         command("%V");
+	XBeePacket_RemoteAT_CommandResponse response;
+	if (m_coordinator.process(command, response))
+	{
+		int voltageEncoded = response.getInt16();
+		// convert from 10 bit A/D value with 1.2V as reference to voltage
+		m_batteryVoltage = voltageEncoded / 1024.0f * 1.2f; 
+	}
 }
 
 uint16_t XBeeRemoteDevice::getParentAddress() const
@@ -405,4 +415,9 @@ XBeeRemoteDevice::DeviceType XBeeRemoteDevice::getDeviceType() const
 	return m_deviceType;
 }
 
+
+float XBeeRemoteDevice::getBatteryVoltage() const
+{
+	return m_batteryVoltage;
+}
 
