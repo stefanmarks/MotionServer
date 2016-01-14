@@ -246,6 +246,9 @@ void _convertCortexSegmentToNatNet(double refCortex[], sRigidBodyData& refNatNet
 	refNatNet.qy = rot.y;
 	refNatNet.qz = rot.z;
 	refNatNet.qw = rot.w;
+
+	// ATTENTION: Abusing mean error for bone length
+	refNatNet.MeanError = refCortex[6] * unitScaleFactor; 
 }
 
 
