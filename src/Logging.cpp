@@ -57,7 +57,7 @@ void printModelDefinitions(std::ostream& refOutput, sDataDescriptions& refData)
 	refOutput << "Model Description (" << refData.nDataDescriptions << " blocks)" << std::endl;
 	for (int dIdx = 0; dIdx < refData.nDataDescriptions; dIdx++)
 	{
-		refOutput << dIdx << ":\t";
+		refOutput << "Block " << dIdx << ":\t";
 		switch (refData.arrDataDescriptions[dIdx].type)
 		{
 			case Descriptor_MarkerSet:
@@ -128,9 +128,71 @@ void printModelDefinitions(std::ostream& refOutput, sDataDescriptions& refData)
 
 void printFrameOfData(std::ostream& refOutput, sFrameOfMocapData& refData)
 {
-	refOutput << "Frame Data (#" << refData.iFrame << ")" << std::endl;
-	for (int mIdx = 0; mIdx < refData.nMarkerSets; mIdx++)
+	refOutput << "Frame Data ("
+		<< "Frame# " << refData.iFrame 
+		<< ", Latency: " << (((int)(refData.fLatency * 1000)) / 1000.0f) << "s" 
+		<< ")" << std::endl;
+
+	// print markersets and marker positions
+	for (int msIdx = 0; msIdx < refData.nMarkerSets; msIdx++)
 	{
+		sMarkerSetData& refMarkerset = refData.MocapData[msIdx];
+		refOutput << "Markerset #" << msIdx << " ('" << refMarkerset.szName << "'):" << std::endl;
+		for (int mIdx = 0; mIdx < refMarkerset.nMarkers; mIdx++)
+		{
+			MarkerData& refMarker = refMarkerset.Markers[mIdx];
+			refOutput << "\tMarker #" << mIdx << ":" <<
+				"\tX=" << refMarker[0] << ", Y=" << refMarker[1] << ", Z=" << refMarker[2] << std::endl;
+		}
+	}
+
+	// print rigid bodies
+	for (int rbIdx = 0; rbIdx < refData.nRigidBodies; rbIdx++)
+	{
+		sRigidBodyData& refRigidBody = refData.RigidBodies[rbIdx];
+		refOutput << "RigidBody #" << rbIdx 
+			<< " (ID " << refRigidBody.ID 
+			<< ", " << (((refRigidBody.params & 0x01) != 0) ? "Tracked" : "Not Tracked")
+			<< "):" << std::endl;
+		for (int mIdx = 0; mIdx < refRigidBody.nMarkers; mIdx++)
+		{
+			MarkerData& refMarker = refRigidBody.Markers[mIdx];
+			refOutput << "\tRB Marker #" << refRigidBody.MarkerIDs[mIdx] << ":" <<
+				"\tX=" << refMarker[0] << ", Y=" << refMarker[1] << ", Z=" << refMarker[2] << std::endl;
+		}
+		refOutput << "\tPosition:    "
+			"X=" << refRigidBody.x << ", Y=" << refRigidBody.y << ", Z=" << refRigidBody.z << std::endl;
+		refOutput << "\tOrientation: "
+			"X=" << refRigidBody.qx << ", Y=" << refRigidBody.qy << ", Z=" << refRigidBody.qz << ", W=" << refRigidBody.qw << std::endl;
+	}
+
+	// print skeletons
+	for (int skIdx = 0; skIdx < refData.nSkeletons; skIdx++)
+	{
+		sSkeletonData& refSkeleton = refData.Skeletons[skIdx];
+		refOutput << "Skeleton #" << skIdx << " (ID " << refSkeleton.skeletonID << "):" << std::endl;
+		for (int rbIdx = 0; rbIdx < refSkeleton.nRigidBodies; rbIdx++)
+		{
+			sRigidBodyData& refRigidBody = refSkeleton.RigidBodyData[rbIdx];
+			refOutput << "\tRB #" << refRigidBody.ID 
+				<< " (" << (((refRigidBody.params & 0x01) != 0) ? "Tracked" : "Not Tracked")
+				<< ", Length: " << refRigidBody.MeanError
+				<< "):" << std::endl
+				<< "\t\tPosition:    X=" << refRigidBody.x << ", Y=" << refRigidBody.y << ", Z=" << refRigidBody.z << std::endl 
+				<< "\t\tOrientation: X=" << refRigidBody.qx << ", Y=" << refRigidBody.qy << ", Z=" << refRigidBody.qz << ", W=" << refRigidBody.qw << std::endl;
+		}
+	}
+
+	// print force plate data (as interaction device data)
+	for (int fpIdx = 0; fpIdx < refData.nForcePlates; fpIdx++)
+	{
+		sForcePlateData& refForcePlate = refData.ForcePlates[fpIdx];
+		refOutput << "Device #" << fpIdx << " (ID " << refForcePlate.ID << "):" << std::endl;
+		for (int chIdx = 0; chIdx < refForcePlate.nChannels; chIdx++)
+		{
+			sAnalogChannelData& refChannel = refForcePlate.ChannelData[chIdx];
+			refOutput << "\tChn #" << chIdx << ":\t" << refChannel.Values[0] << std::endl;
+		}
 	}
 }
 
