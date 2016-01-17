@@ -865,7 +865,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				delete pInteractionSystem;
 				pInteractionSystem = NULL;
 			}
-
+				
 			// clean up structures and objects
 			mtxMoCap.lock();
 			if (pMoCapSystem)
