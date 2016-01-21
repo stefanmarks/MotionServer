@@ -65,6 +65,8 @@
 
 struct sConfiguration 
 {
+	std::string strServerName;
+
 	bool        useMulticast;
 	std::string strNatNetServerUnicastAddress;
 	std::string strNatNetServerMulticastAddress;
@@ -82,6 +84,9 @@ struct sConfiguration
 	sConfiguration()
 	{
 		// default configuration
+
+		strServerName                   = "MotionServer";
+
 		useMulticast                    = true;
 		strNatNetServerUnicastAddress   = "127.0.0.1";
 		strNatNetServerMulticastAddress = "224.0.0.1";
@@ -109,8 +114,7 @@ struct sConfiguration
 //
 
 // Server version information
-std::string   strServerName       = "MotionServer";
-const uint8_t arrServerVersion[4] = { 1, 6, 4, 0 };
+const uint8_t arrServerVersion[4] = { 1, 6, 5, 0 };
       uint8_t arrServerNatNetVersion[4]; // filled in later
 
 // Server variables
@@ -164,6 +168,7 @@ void printUsage()
 {
 	std::cout << "Command line arguments:" << std::endl
 		<< "-h\t\t\tPrint Help" << std::endl
+		<< "-serverName\t\tName of MoCap Server" << std::endl
 		<< "-serverAddr\t\tIP Address of MoCap Server IP address" << std::endl
 		<< "-unicast\t\tUse Unicast data transfer (default)" << std::endl
 		<< "-multicast\t\tUse Multicast data transfer" << std::endl
@@ -240,7 +245,12 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 			std::wstring strParam1W(arrArguments[argIdx + 1]);
 			std::string  strParam1(strParam1W.begin(), strParam1W.end());
 
-			if (strArg == "-serveraddr")
+			if (strArg == "-servername")
+			{
+				// Server name
+				config.strServerName = strParam1;
+			}
+			else if (strArg == "-serveraddr")
 			{
 				// Server unicast address
 				config.strNatNetServerUnicastAddress = strParam1;
@@ -612,7 +622,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 			// build server response packet
 			pPacketOut->iMessage = NAT_PINGRESPONSE;
 			pPacketOut->nDataBytes = sizeof(pPacketOut->Data.Sender);
-			strcpy_s(pPacketOut->Data.Sender.szName, strServerName.c_str());
+			strcpy_s(pPacketOut->Data.Sender.szName, config.strServerName.c_str());
 			for (int i = 0; i < 4; i++)
 			{ 
 				pPacketOut->Data.Sender.Version[i] = arrServerVersion[i]; 
@@ -771,7 +781,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 	{
 		do
 		{
-			LOG_INFO("Starting Motion Server v" 
+			LOG_INFO("Starting MotionServer '" << config.strServerName << "' v" 
 				<< (int) arrServerVersion[0] << "."
 				<< (int) arrServerVersion[1] << "."
 				<< (int) arrServerVersion[2] << "."
