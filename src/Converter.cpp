@@ -96,7 +96,7 @@ void convertCortexDescriptionToNatNet(sBodyDefs& refCortex, sDataDescriptions& r
 			// one bone skeleton -> treat as rigid body
 			// create rigid body description
 			sRigidBodyDescription* pRigidBodyDescr  = new sRigidBodyDescription;
-			strncpy_s(pRigidBodyDescr->szName, refSkeleton.szSegmentNames[0], sizeof(pRigidBodyDescr->szName)); // rigid body name
+			strncpy_s(pRigidBodyDescr->szName, bodyDef.szName, sizeof(pRigidBodyDescr->szName)); // rigid body name
 			pRigidBodyDescr->ID = iBodyIdx; // rigid body ID = actor ID
 			pRigidBodyDescr->parentID = -1; // no parent
 			pRigidBodyDescr->offsetx = 0;   // the offset does not exist in Cortex data
@@ -124,7 +124,7 @@ void convertCortexDescriptionToNatNet(sBodyDefs& refCortex, sDataDescriptions& r
 			// skeleton data included as well
 			// create skeleton description and skeleton data
 			sSkeletonDescription* pSkeletonDescr = new sSkeletonDescription;
-			sSkeletonData&        refSkeletonData = refFrame.Skeletons[idxSkeleton];		
+			sSkeletonData&        refSkeletonData = refFrame.Skeletons[idxSkeleton];
 			strncpy_s(pSkeletonDescr->szName, bodyDef.szName, sizeof(pSkeletonDescr->szName)); // markerset name = skeleton name
 			pSkeletonDescr->skeletonID = iBodyIdx; // skeleton ID
 			refSkeletonData.skeletonID = iBodyIdx;

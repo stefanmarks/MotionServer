@@ -3,5 +3,5 @@ As a minimum requirement, add the SDK header files from the NatNet SDKs here (ht
 - NatNetTypes.h
 
 If you are using other motion capture systems, add their specific SDK header files as well.
-- Cortex (MotionAnalysis)
+- Cortex (MotionAnalysis > needs to be requested via email)
   - Cortex.h

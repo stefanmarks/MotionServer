@@ -6,6 +6,10 @@ and streams it to the network.
 
 Latest development sources can be found [on github](https://github.com/stefanmarks/MotionServer).
 
+For copyright reasons, this project does not contain the sources for the Cortex and the NatNet SDKs files.
+Those files need to be downloaded from [OptiTrack](http://www.optitrack.com/products/natnet-sdk/),
+or requested via email from [MotionAnalysis](http://www.motionanalysis.com/html/industrial/cortex.html).
+
 
 ## Folder structure
 
