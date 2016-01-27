@@ -4,10 +4,11 @@
 #undef   LOG_CLASS
 #define  LOG_CLASS "MoCapSimulator"
 
-#include "stdlib.h"
-#include "stdio.h"
+#include <algorithm>
+#include <iterator>
+#include <string>
+
 #include "math.h"
-#include "memory.h"
 
 
 const int _frameRate = 60;
@@ -110,6 +111,7 @@ bool MoCapSimulator::update()
 			{
 				arrPos[b].set(r * -sin(t), oPos, r * -cos(t)); // zero degrees = Z- forwards
 				arrRot[b].fromAxisAngle(0, 1, 0, t);
+				// apply pitch 
 				Quaternion rotX(1, 0, 0, oRot * (float) (M_PI / 180));
 				arrRot[b] = arrRot[b].mult(rotX);
 				break;
@@ -276,14 +278,18 @@ bool MoCapSimulator::getFrameData(MoCapData& refData)
 bool MoCapSimulator::processCommand(const std::string& strCommand)
 {
 	bool processed = false;
-	
-	if ( strCommand == "lossy" )
+
+	// convert commandto lowercase
+	std::string strCmdLowerCase;
+	std::transform(strCommand.begin(), strCommand.end(), std::back_inserter(strCmdLowerCase), ::tolower);
+
+	if (strCmdLowerCase == "lossy" )
 	{
 		trackingUnreliable = true;
 		LOG_INFO("Tracking unreliable/lossy");
 		processed = true;
 	}
-	else if (strCommand == "lossless")
+	else if (strCmdLowerCase == "lossless")
 	{
 		trackingUnreliable = false;
 		LOG_INFO("Tracking reliable/lossless");

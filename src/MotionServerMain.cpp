@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 6, 7, 0 };
+const int arrServerVersion[4] = { 1, 6, 8, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -44,7 +44,6 @@ const int arrServerVersion[4] = { 1, 6, 7, 0 };
 #pragma comment(lib, "NatNetLib.lib")
 #include "NatNetTypes.h"
 #include "NatNetServer.h"
-#include "Converter.h"
 #include "MoCapData.h"
 
 #include "Logging.h"
@@ -705,16 +704,6 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 				}
 				pPacketOut->nDataBytes = (unsigned short) strlen(pPacketOut->Data.szData) + 1;
 			}
-#ifdef USE_CORTEX
-			else if (strRequestL == "enableunknownmarkers")
-			{
-				setHandleUnknownMarkers(true);
-			}
-			else if (strRequestL == "disableunknownmarkers")
-			{
-				setHandleUnknownMarkers(false);
-			}
-#endif
 			else
 			{
 				// last resort: MoCap subsytem can handle this?
@@ -820,11 +809,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 					<< std::endl << "\tq:Quit"
 					<< std::endl << "\tr:Restart"
 					<< std::endl << "\td:Print Model Definitions"
-					<< std::endl << "\tf:Print Frame Data"
-#ifdef USE_CORTEX
-					<< std::endl << "\tu:Enable/Disable unknown markers"
-#endif
-					;
+					<< std::endl << "\tf:Print Frame Data";
 				LOG_INFO("Commands:" << commands.str())
 
 				do
@@ -856,13 +841,6 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 						printFrameOfData(strm, pMocapData->frame);
 						std::cout << strm.str() << std::endl;
 					}
-#ifdef USE_CORTEX
-					else if (strCmdLowerCase == "u")
-					{
-						setHandleUnknownMarkers(!isHandlingUnknownMarkers());
-						LOG_INFO("Unknown markers: " << (isHandlingUnknownMarkers() ? "enabled" : "disabled"));
-					}
-#endif
 					else if (pMoCapSystem->processCommand(strCommand) == true)
 					{
 						// MoCap susbsytem was able to handle command
