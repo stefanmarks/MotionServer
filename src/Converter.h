@@ -2,6 +2,10 @@
  * Function headers for converting Cortex data structures to NatNet and managing memory.
  */
 
+#include "Config.h"
+
+#ifdef USE_CORTEX
+
 #include "Cortex.h"
 #include "NatNetTypes.h"
 
@@ -16,3 +20,5 @@ bool convertCortexFrameToNatNet(sFrameOfData& refCortex, sFrameOfMocapData& refF
 
 void freeNatNetDescription(sDataDescriptions& refDescr);
 void freeNatNetFrameData(sFrameOfMocapData& refFrame);
+
+#endif

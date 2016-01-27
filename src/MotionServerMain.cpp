@@ -5,6 +5,11 @@
  * Auckland University of Technology
  */
 
+
+// Server version information
+const int arrServerVersion[4] = { 1, 6, 7, 0 };
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // includes
 
@@ -46,16 +51,15 @@
 #undef   LOG_CLASS
 #define  LOG_CLASS "MotionServer" 
 
-#include "MoCapSimulator.h"
+#ifdef USE_CORTEX
+#include "MoCapCortex.h"
+#endif
 
 #ifdef USE_OCULUS_RIFT
 #include "MoCapOculusRift.h"
 #endif
 
-#ifdef USE_CORTEX
-#include "MoCapCortex.h"
-#endif
-
+#include "MoCapSimulator.h"
 #include "InteractionSystem.h"
 
 
@@ -113,16 +117,13 @@ struct sConfiguration
 // Operational variables
 //
 
-// Server version information
-const uint8_t arrServerVersion[4] = { 1, 6, 6, 0 };
-      uint8_t arrServerNatNetVersion[4]; // filled in later
-
 // Server variables
-NatNetServer* pServer = NULL;
+NatNetServer* pServer          = NULL;
 std::mutex    mtxServer;
-bool serverStarting   = true;
-bool serverRunning    = false;
-bool serverRestarting = false;
+bool          serverStarting   = true;
+bool          serverRunning    = false;
+bool          serverRestarting = false;
+uint8_t       arrServerNatNetVersion[4]; // filled in later
 
 // MoCap system variables
 MoCapSystem*  pMoCapSystem;
@@ -625,7 +626,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 			strcpy_s(pPacketOut->Data.Sender.szName, config.strServerName.c_str());
 			for (int i = 0; i < 4; i++)
 			{ 
-				pPacketOut->Data.Sender.Version[i] = arrServerVersion[i]; 
+				pPacketOut->Data.Sender.Version[i] = (unsigned char) arrServerVersion[i]; 
 			}
 			for (int i = 0; i < 4; i++)
 			{
@@ -704,6 +705,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 				}
 				pPacketOut->nDataBytes = (unsigned short) strlen(pPacketOut->Data.szData) + 1;
 			}
+#ifdef USE_CORTEX
 			else if (strRequestL == "enableunknownmarkers")
 			{
 				setHandleUnknownMarkers(true);
@@ -712,6 +714,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 			{
 				setHandleUnknownMarkers(false);
 			}
+#endif
 			else
 			{
 				// last resort: MoCap subsytem can handle this?
@@ -782,10 +785,10 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 		do
 		{
 			LOG_INFO("Starting MotionServer '" << config.strServerName << "' v" 
-				<< (int) arrServerVersion[0] << "."
-				<< (int) arrServerVersion[1] << "."
-				<< (int) arrServerVersion[2] << "."
-				<< (int) arrServerVersion[3]);
+				<< arrServerVersion[0] << "."
+				<< arrServerVersion[1] << "."
+				<< arrServerVersion[2] << "."
+				<< arrServerVersion[3]);
 
 			// create data object
 			pMocapData = new MoCapData();
@@ -806,18 +809,23 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				if (pMoCapSystem)       pMoCapSystem->getSceneDescription(*pMocapData);
 				if (pInteractionSystem) pInteractionSystem->getSceneDescription(*pMocapData);
 
-				//unsigned int thread_id = 0;
-				//_beginthreadex(NULL, 0, mocapTimerThread, NULL, 0, &thread_id);
 				std::thread streamingThread(mocapTimerThread, pMoCapSystem->getUpdateInterval());
 				LOG_INFO("Streaming thread started");
 
 				LOG_INFO("Motion Server started");
-				LOG_INFO("Commands:" << std::endl
-					<< "\tq:Quit" << std::endl
-					<< "\tr:Restart" << std::endl
-					<< "\td:Print Model Definitions" << std::endl
-					<< "\tf:Print Frame Data" << std::endl
-					<< "\tu:Enable/Disable unknown markers")
+
+				// construct possible command help output
+				std::stringstream commands;
+				commands
+					<< std::endl << "\tq:Quit"
+					<< std::endl << "\tr:Restart"
+					<< std::endl << "\td:Print Model Definitions"
+					<< std::endl << "\tf:Print Frame Data"
+#ifdef USE_CORTEX
+					<< std::endl << "\tu:Enable/Disable unknown markers"
+#endif
+					;
+				LOG_INFO("Commands:" << commands.str())
 
 				do
 				{
@@ -848,11 +856,13 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 						printFrameOfData(strm, pMocapData->frame);
 						std::cout << strm.str() << std::endl;
 					}
+#ifdef USE_CORTEX
 					else if (strCmdLowerCase == "u")
 					{
 						setHandleUnknownMarkers(!isHandlingUnknownMarkers());
 						LOG_INFO("Unknown markers: " << (isHandlingUnknownMarkers() ? "enabled" : "disabled"));
 					}
+#endif
 					else if (pMoCapSystem->processCommand(strCommand) == true)
 					{
 						// MoCap susbsytem was able to handle command

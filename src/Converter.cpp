@@ -1,3 +1,7 @@
+#include "Config.h"
+
+#ifdef USE_CORTEX
+
 #include <string.h>
 
 #include "Logging.h"
@@ -317,4 +321,5 @@ bool convertCortexFrameToNatNet(sFrameOfData& refCortex, sFrameOfMocapData& refN
 	return true;
 }
 
+#endif
 
