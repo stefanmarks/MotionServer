@@ -1,5 +1,5 @@
 /**
- * Fallback Motion Capture system for simulating several rigid bodies moving on predefined paths.
+ * Motion Capture system for simulating several rigid bodies moving on predefined paths.
  */
 
 #pragma once
@@ -17,14 +17,14 @@ public:
 	virtual ~MoCapSimulator();
 
 public:
-	virtual bool initialise();
-	virtual bool isActive();
-	virtual int  getUpdateInterval();
-	virtual bool update();
-	virtual bool getSceneDescription(MoCapData& refData);
-	virtual bool getFrameData(MoCapData& refData);
-	virtual bool processCommand(const std::string& strCommand);
-	virtual bool deinitialise();
+	virtual bool  initialise();
+	virtual bool  isActive();
+	virtual float getUpdateRate();
+	virtual bool  update();
+	virtual bool  getSceneDescription(MoCapData& refData);
+	virtual bool  getFrameData(MoCapData& refData);
+	virtual bool  processCommand(const std::string& strCommand);
+	virtual bool  deinitialise();
 
 private:
 	bool                    initialised;

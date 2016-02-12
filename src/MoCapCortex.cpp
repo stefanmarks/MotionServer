@@ -54,6 +54,7 @@ MoCapCortex::MoCapCortex(const std::string &strCortexAddress, const std::string 
 	initialised(false),
 	pCortexInfo(NULL),
 	unitScaleFactor(1.0f),
+	updateRate(100.0f),
 	handleUnknownMarkers(false)
 {
 	this->strCortexAddress = strCortexAddress;
@@ -122,7 +123,15 @@ bool MoCapCortex::initialise()
 					unitToMillimeter = *((float*)pResponse);
 					LOG_INFO("Units to millimeters: " << unitToMillimeter);
 				}
-				setUnitScaleFactor(unitToMillimeter / 1000.0f); // convert millimeters to units
+				unitScaleFactor = unitToMillimeter / 1000.0f; // convert millimeters to units
+
+				// determine update rate
+				updateRate = 100.0f;
+				if (Cortex_Request("GetContextFrameRate", &pResponse, &iResponseSize) == RC_Okay)
+				{
+					updateRate = *((float*)pResponse);
+					LOG_INFO("Cortex Framerate: " << updateRate);
+				}
 
 				LOG_INFO("Initialised");
 
@@ -147,9 +156,9 @@ bool MoCapCortex::isActive()
 }
 
 
-int  MoCapCortex::getUpdateInterval()
+float MoCapCortex::getUpdateRate()
 {
-	return 1000;
+	return updateRate;
 }
 
 
@@ -213,18 +222,6 @@ bool MoCapCortex::getFrameData(MoCapData& refData)
 	}
 
 	return success;
-}
-
-
-float MoCapCortex::getUnitScaleFactor()
-{
-	return unitScaleFactor;
-}
-
-
-void MoCapCortex::setUnitScaleFactor(float factor)
-{
-	unitScaleFactor = factor;
 }
 
 

@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 6, 8, 0 };
+const int arrServerVersion[4] = { 1, 7, 0, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -59,6 +59,7 @@ const int arrServerVersion[4] = { 1, 6, 8, 0 };
 #endif
 
 #include "MoCapSimulator.h"
+#include "MoCapFile.h"
 #include "InteractionSystem.h"
 
 
@@ -75,6 +76,8 @@ struct sConfiguration
 	std::string strNatNetServerMulticastAddress;
 	int         iNatNetCommandPort;
 	int         iNatNetDataPort;
+
+	bool        writeFile;
 
 	bool        useCortex;
 	std::string strRemoteCortexAddress;
@@ -101,6 +104,8 @@ struct sConfiguration
 		iNatNetDataPort    = 1509;
 
 		iInteractionControllerPort = 0;
+
+		writeFile              = false;
 
 		useCortex              = true;
 		strRemoteCortexAddress = "127.0.0.1";
@@ -129,6 +134,8 @@ MoCapSystem*  pMoCapSystem;
 std::mutex    mtxMoCap;
 MoCapData*    pMocapData;
 sPacket       packetOut;
+
+MoCapFileWriter* pMoCapFileWriter;
 
 // Interaction system variables
 InteractionSystem* pInteractionSystem;
@@ -182,7 +189,8 @@ void printUsage()
 		<< "-cortexLocalAddr\tIP Address of local interface to connect to Cortex" << std::endl
 #endif
 		<< "-interactionControllerPort\tCOM port of XBee interaction controller (-1: scan)" << std::endl
-	;
+		<< "-writeFile\tWrite MoCap Data into timestamped files" << std::endl
+		;
 }
 
 
@@ -224,6 +232,10 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 			else if (strArg == "-multicast")
 			{
 				config.useMulticast = true;
+			}
+			else if (strArg == "-writefile")
+			{
+				config.writeFile = true;
 			}
 #ifdef USE_OCULUS_RIFT
 			else if (strArg == "-nohmd")
@@ -347,16 +359,22 @@ MoCapSystem* detectMoCapSystem()
 		pSystem->initialise();
 	}
 
+	// are we supposed to write data into a file?
+	if (config.writeFile)
+	{
+		pMoCapFileWriter = new MoCapFileWriter(pSystem->getUpdateRate());
+	}
+
 	return pSystem;
 }
 
 
 /**
-* Detects the XBee interaction system controller.
-*
-* @return  the controller instance
-*          (or <code>NULL</code> if no controller was found)
-*/
+ * Detects the XBee interaction system controller.
+ *
+ * @return  the controller instance
+ *          (or <code>NULL</code> if no controller was found)
+ */
 InteractionSystem* detectInteractionSystem()
 {
 	InteractionSystem* pSystem = NULL;
@@ -520,6 +538,11 @@ void signalNewFrame()
 				pServer->SendPacket(&packetOut);
 			}
 			mtxServer.unlock();
+
+			if (pMoCapFileWriter)
+			{
+				pMoCapFileWriter->writeFrameData(*pMocapData);
+			}
 		}
 		else
 		{
@@ -795,12 +818,36 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				serverRestarting = false;
 
 				// prepare scene description
-				if (pMoCapSystem)       pMoCapSystem->getSceneDescription(*pMocapData);
-				if (pInteractionSystem) pInteractionSystem->getSceneDescription(*pMocapData);
+				if (pMoCapSystem)
+				{
+					pMoCapSystem->getSceneDescription(*pMocapData);
+				}
 
-				std::thread streamingThread(mocapTimerThread, pMoCapSystem->getUpdateInterval());
+				if (pInteractionSystem)
+				{
+					if (pMocapData->frame.nForcePlates == 0)
+					{
+						pInteractionSystem->getSceneDescription(*pMocapData);
+					}
+					else
+					{
+						// force platyes already defined (e.g., through file playback) > sorry, no realtime data possible
+						LOG_WARNING("Cannot use real-time Interaction System data");
+					}
+				}
+				
+				// if enabled, write description to file
+				if (pMoCapFileWriter)
+				{
+					pMoCapFileWriter->writeSceneDescription(*pMocapData);
+				}
+
+				// start streaming thread
+				int updateInterval = (int)(1000.0 / pMoCapSystem->getUpdateRate()); // from FPS to milliseconds
+				std::thread streamingThread(mocapTimerThread, updateInterval);
 				LOG_INFO("Streaming thread started");
 
+				// That's all folks
 				LOG_INFO("Motion Server started");
 
 				// construct possible command help output
@@ -866,6 +913,12 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				
 			// clean up structures and objects
 			mtxMoCap.lock();
+			if (pMoCapFileWriter)
+			{
+				delete pMoCapFileWriter;
+				pMoCapFileWriter = NULL;
+			}
+
 			if (pMoCapSystem)
 			{
 				pMoCapSystem->deinitialise();

@@ -21,28 +21,14 @@ public:
 	virtual ~MoCapCortex();
 
 public:
-	virtual bool initialise();
-	virtual bool isActive();
-	virtual int  getUpdateInterval();
-	virtual bool update();
-	virtual bool getSceneDescription(MoCapData& refData);
-	virtual bool getFrameData(MoCapData& refData);
-	virtual bool processCommand(const std::string& strCommand);
-	virtual bool deinitialise();
-
-	/**
-	 * Gets the factor which is used to scale all positions.
-	 * 
-	 * @return  scale factor for all positions
-	 */
-	float getUnitScaleFactor();
-
-	/**
-	 * Sets the factor which is used to scale all positions.
-	 *
-	 * @param factor  new scale factor for all positions
-	 */
-	void  setUnitScaleFactor(float factor);
+	virtual bool  initialise();
+	virtual bool  isActive();
+	virtual float getUpdateRate();
+	virtual bool  update();
+	virtual bool  getSceneDescription(MoCapData& refData);
+	virtual bool  getFrameData(MoCapData& refData);
+	virtual bool  processCommand(const std::string& strCommand);
+	virtual bool  deinitialise();
 
 	/**
 	 * Checks if the Cortex system handles unknown marker data.
@@ -84,6 +70,7 @@ private:
 	sHostInfo*   pCortexInfo;
 
 	float        unitScaleFactor;
+	float        updateRate;
 	bool         handleUnknownMarkers;
 
 };

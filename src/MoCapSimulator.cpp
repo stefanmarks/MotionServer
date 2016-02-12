@@ -11,7 +11,7 @@
 #include "math.h"
 
 
-const int _frameRate = 60;
+const float _frameRate = 60;
 
 
 struct sRigidBodyMovementParams
@@ -81,9 +81,9 @@ bool MoCapSimulator::isActive()
 }
 
 
-int MoCapSimulator::getUpdateInterval()
+float MoCapSimulator::getUpdateRate()
 {
-	return 1000 / _frameRate;
+	return _frameRate;
 }
 
 
@@ -160,7 +160,7 @@ bool MoCapSimulator::getSceneDescription(MoCapData& refData)
 		// name of marker set
 		strcpy_s(pMarkerDesc->szName, sizeof(pMarkerDesc->szName), RIGID_BODY_PARAMS[b].szName);
 		strcpy_s(msData.szName,       sizeof(msData.szName),       pMarkerDesc->szName);
-
+		
 		// number of markers
 		pMarkerDesc->nMarkers = MARKER_COUNT;
 		msData.nMarkers       = MARKER_COUNT;

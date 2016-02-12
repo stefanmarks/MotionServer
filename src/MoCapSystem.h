@@ -34,11 +34,11 @@ public:
 	virtual bool isActive() = 0;
 
 	/**
-	 * Gets the minimum update interval for the system.
+	 * Gets the ideal update rate per second for the system.
 	 *
-	 * @return the minimum update interval for the MoCap system in milliseconds
+	 * @return the minimum update rate for the MoCap system in times per second
 	 */
-	virtual int  getUpdateInterval() = 0;
+	virtual float getUpdateRate() = 0;
 
 	/**
 	 * Forces an update of the MoCap data.

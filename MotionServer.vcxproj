@@ -90,6 +90,7 @@
     <ClInclude Include="include\Cortex.h" />
     <ClInclude Include="include\NatNetServer.h" />
     <ClInclude Include="include\NatNetTypes.h" />
+    <ClInclude Include="src\MoCapFile.h" />
     <ClInclude Include="src\Config.h" />
     <ClInclude Include="src\InteractionSystem.h" />
     <ClInclude Include="src\MoCapCortex.h" />
@@ -104,6 +105,7 @@
     <ClInclude Include="src\XBeeData.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\MoCapFile.cpp" />
     <ClCompile Include="src\InteractionSystem.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\MoCapCortex.cpp" />
