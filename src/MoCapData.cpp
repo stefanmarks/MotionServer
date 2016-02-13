@@ -23,32 +23,38 @@ void MoCapData::freeNatNetDescription()
 {
 	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
 	{
-		switch (description.arrDataDescriptions[dataBlockIdx].type)
+		sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
+		switch (descr.type)
 		{
 			case Descriptor_MarkerSet:
 				// Marker set -> release array of marker names
-				freeNatNetMarkerSetDescription(description.arrDataDescriptions[dataBlockIdx].Data.MarkerSetDescription);
+				freeNatNetMarkerSetDescription(descr.Data.MarkerSetDescription);
+				descr.Data.MarkerSetDescription = NULL;
 				break;
 
 			case Descriptor_RigidBody:
 				// Rigid body -> release data
-				freeNatNetRigidBodyDescription(description.arrDataDescriptions[dataBlockIdx].Data.RigidBodyDescription);
+				freeNatNetRigidBodyDescription(descr.Data.RigidBodyDescription);
+				descr.Data.RigidBodyDescription = NULL;
 				break;
 
 			case Descriptor_Skeleton:
 				// Skeleton -> release data
-				freeNatNetSkeletonDescription(description.arrDataDescriptions[dataBlockIdx].Data.SkeletonDescription);
+				freeNatNetSkeletonDescription(descr.Data.SkeletonDescription);
+				descr.Data.SkeletonDescription = NULL;
 				break;
 
 			case Descriptor_ForcePlate:
 				// Force plate -> release data
-				freeNatNetForcePlateDescription(description.arrDataDescriptions[dataBlockIdx].Data.ForcePlateDescription);
+				freeNatNetForcePlateDescription(descr.Data.ForcePlateDescription);
+				descr.Data.ForcePlateDescription = NULL;
 				break;
 
 			default:
 				// nothing to release for the other descriptors
 				break;
 		}
+		descr.type = 0;
 	}
 	description.nDataDescriptions = 0;
 }
@@ -60,6 +66,7 @@ void MoCapData::freeNatNetMarkerSetDescription(sMarkerSetDescription* pMarkerSet
 	for (int mIdx = 0; mIdx < pMarkerSet->nMarkers; mIdx++)
 	{
 		delete[] pMarkerSet->szMarkerNames[mIdx];
+		pMarkerSet->szMarkerNames[mIdx] = NULL;
 	}
 	
 	// release marker names array
