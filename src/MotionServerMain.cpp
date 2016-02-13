@@ -788,13 +788,16 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
  */
 void mocapTimerThread(int updateInterval)
 {
-	const std::chrono::milliseconds       sleepTime(updateInterval);
-	std::chrono::system_clock::time_point nextTick(std::chrono::system_clock::now() + sleepTime);
+	// create variables to keep track of timing
+	const std::chrono::milliseconds       intervalTime(updateInterval);
+	std::chrono::system_clock::time_point nextTick(std::chrono::system_clock::now() + intervalTime);
 
 	while (serverRunning)
 	{
+		// sleep for a while
 		std::this_thread::sleep_until(nextTick);
-		nextTick = std::chrono::system_clock::now() + sleepTime;
+		// immediately calculate next tick to compensate for time the update() functions takes
+		nextTick = std::chrono::system_clock::now() + intervalTime;
 
 		// mtxMoCap.lock(); < this would collide with the lock in signalNewFrame that is probably being called
 		if (serverRunning && pMoCapSystem)
@@ -872,9 +875,10 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				pServer->SetMessageResponseCallback(callbackNatNetServerRequestHandler);
 
 				// start streaming thread
-				int updateInterval = (int)(1000.0 / pMoCapSystem->getUpdateRate()); // from FPS to milliseconds
+				float updateRate     = pMoCapSystem->getUpdateRate(); 
+				int   updateInterval = (int)(1000.0f / updateRate); // convert to millisecond sleep time
 				std::thread streamingThread(mocapTimerThread, updateInterval);
-				LOG_INFO("Streaming thread started");
+				LOG_INFO("Streaming thread started (Update rate: " << updateRate << "Hz)");
 
 				// That's all folks
 				LOG_INFO("MotionServer started");
