@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 7, 1, 0 };
+const int arrServerVersion[4] = { 1, 7, 2, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ struct sConfiguration
 	std::string strServerName;
 
 	bool        useMulticast;
-	std::string strNatNetServerUnicastAddress;
+	std::string strNatNetServerAddress;
 	std::string strNatNetServerMulticastAddress;
 	int         iNatNetCommandPort;
 	int         iNatNetDataPort;
@@ -94,9 +94,9 @@ struct sConfiguration
 
 		strServerName                   = "MotionServer";
 
-		useMulticast                    = true;
-		strNatNetServerUnicastAddress   = "127.0.0.1";
-		strNatNetServerMulticastAddress = "224.0.0.1";
+		useMulticast                    = false;
+		strNatNetServerAddress          = "127.0.0.1";
+		strNatNetServerMulticastAddress = "";
 		
 		// Portnumbers: Default is 1510/1511, but that seems to collide with Cortex.
 		// 1503 is taken by Windows messenger, 1512 is taken by WINS
@@ -177,16 +177,13 @@ void printUsage()
 {
 	std::cout << "Command line arguments:" << std::endl
 		<< "-h                                    Print Help" << std::endl
-		<< "-serverName <name>                    Name of MoCap Server" << std::endl
-		<< "-serverAddr <address>                 IP Address of MoCap Server IP address" << std::endl
-		<< "-unicast                              Use Unicast data transfer (default)" << std::endl
-		<< "-multicast                            Use Multicast data transfer" << std::endl
-		<< "-multicastAddr <address>              IP Address of multicast MoCap Server IP address" << std::endl
+		<< "-serverName <name>                    Name of MoCap Server (default: 'MotionServer')" << std::endl
+		<< "-serverAddr <address>                 IP Address of MotionServer (default: 127.0.0.1)" << std::endl
+		<< "-multicastAddr <address>              IP Address of multicast MotionServer (default: Unicast)" << std::endl
 #ifdef USE_OCULUS_RIFT
 		<< "-noHMD                                No Oculus Rift detection" << std::endl
 #endif
 #ifdef USE_CORTEX
-		<< "-noCortex                             No Cortex detection" << std::endl
 		<< "-cortexRemoteAddr <address>           IP Address of remote interface to connect to Cortex" << std::endl
 		<< "-cortexLocalAddr <address>            IP Address of local interface to connect to Cortex" << std::endl
 #endif
@@ -228,14 +225,6 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 				serverRestarting = false;
 				printUsage();
 			}
-			else if (strArg == "-unicast")
-			{
-				config.useMulticast = false;
-			}
-			else if (strArg == "-multicast")
-			{
-				config.useMulticast = true;
-			}
 			else if (strArg == "-writefile")
 			{
 				config.writeData = true;
@@ -244,12 +233,6 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 			else if (strArg == "-nohmd")
 			{
 				config.useOculusRift = false;
-			}
-#endif
-#ifdef USE_CORTEX
-			else if (strArg == "-nocortex")
-			{
-				config.useCortex = false;
 			}
 #endif
 		}
@@ -268,7 +251,12 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 			else if (strArg == "-serveraddr")
 			{
 				// Server unicast address
-				config.strNatNetServerUnicastAddress = strParam1;
+				config.strNatNetServerAddress = strParam1;
+			}
+			else if (strArg == "-interactioncontrollerport")
+			{
+				// COM port number for XBee interaction controller
+				config.iInteractionControllerPort = atoi(strParam1.c_str());
 			}
 			else if (strArg == "-multicastaddr")
 			{
@@ -295,11 +283,6 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 				config.useCortex = true;
 			}
 #endif
-			else if (strArg == "-interactioncontrollerport")
-			{
-				// COM port number for XBee interaction controller
-				config.iInteractionControllerPort = atoi(strParam1.c_str());
-			}
 		}
 
 		argIdx++; // next argument
@@ -493,7 +476,7 @@ bool createServer()
 	}
 
 	int retCode = pServer->Initialize(
-		(char*) config.strNatNetServerUnicastAddress.c_str(),
+		(char*) config.strNatNetServerAddress.c_str(),
 		config.iNatNetCommandPort, 
 		config.iNatNetDataPort);
 
@@ -732,11 +715,11 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 
 			if (strRequestL == "quit")
 			{
-				stopServer();
+				stopServer(); // TODO: Doesn't work yet due to std::cin waiting for Enter
 			}
 			else if (strRequestL == "restart")
 			{
-				restartServer();
+				restartServer(); // TODO: Doesn't work yet due to std::cin waiting for Enter
 			}
 			else if (strRequestL == "getdatastreamaddress")
 			{
@@ -746,7 +729,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 				}
 				else
 				{
-					strcpy_s(pPacketOut->Data.szData, config.strNatNetServerUnicastAddress.c_str());
+					strcpy_s(pPacketOut->Data.szData, "");
 				}
 				pPacketOut->nDataBytes = (unsigned short) strlen(pPacketOut->Data.szData) + 1;
 			}
@@ -841,7 +824,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 			pInteractionSystem = detectInteractionSystem();
 
 			// start server
-			if ( createServer() )
+			if (createServer())
 			{
 				serverRunning    = true;
 				serverRestarting = false;
