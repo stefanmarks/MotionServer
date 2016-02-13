@@ -256,10 +256,10 @@ void MoCapFileWriter::writeDelimiter()
 void MoCapFileWriter::write(float fValue)
 {
 	writeDelimiter();
-	int len = sprintf_s(czBuf, "%f", fValue);
-	while (czBuf[len-1] == '0') len--; // cut trailing zeroes
-	if    (czBuf[len-1] == '.') len--; // and if necessary even the decimal dot
-	output.write(czBuf, len);
+	int len = sprintf_s(czBuf, "%f", fValue) - 1;
+	while ((len > 0) && (czBuf[len] == '0')) len--; // cut trailing zeroes
+	if    ((len > 0) && (czBuf[len] == '.')) len--; // and if possible even the decimal dot
+	output.write(czBuf, len + 1);
 }
 
 
@@ -338,13 +338,14 @@ std::string MoCapFileWriter::getTimestampFilename()
 // MoCapFileReader class
 // 
 
-#define  LOG_CLASS "MoCapFileReader"
+#undef  LOG_CLASS
+#define LOG_CLASS "MoCapFileReader"
 
 MoCapFileReader::MoCapFileReader(const std::string& strFilename) :
 	strFilename(strFilename),
 	updateRate(0),
 	pBuf(NULL), pRead(NULL),
-	bufSize(65536)
+	bufSize(65536) // should be a good start for a buffer size...
 {
 	pBuf  = new char[bufSize];
 	pRead = pBuf;
@@ -416,9 +417,14 @@ bool MoCapFileReader::getSceneDescription(MoCapData& refData)
 			{
 				sDataDescription&  refDescr = refData.description.arrDataDescriptions[dIdx];
 
-				readInt(); // index, should be == dIdx
-				const char* czType = readString();
+				int index = readInt(); // description index
+				if (index != dIdx)
+				{
+					LOG_WARNING("Wrong index " << index << " for descriptor " << dIdx);
+				}
 
+				// what descriptor type is it > parse accordingly
+				const char* czType = readString();
 				if ( _stricmp(czType, TAG_MARKERSET) == 0)
 				{
 					sMarkerSetDescription* pDescr   = new sMarkerSetDescription;
