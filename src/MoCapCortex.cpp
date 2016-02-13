@@ -35,13 +35,10 @@ void __cdecl callbackMoCapCortexMessageHandler(int iMessageType, char* czMessage
 
 
 /**
-* Handler for frames from the Cortex server.
-*/
-
+ * Handler for frames from the Cortex server.
+ */
 void __cdecl callbackMoCapCortexDataHandler(sFrameOfData* pFrameOfData)
 {
-	//LOG_INFO("got new frame from callback");
-	
 	// process data
 	// merely signal new frame, the main system will pick up the data through getFrameData(...)
 	// which uses Cortex_GetCurrentFrame() 
@@ -69,8 +66,10 @@ bool MoCapCortex::initialise()
 		// print version info
 		unsigned char cortexSDK_Version[4];
 		Cortex_GetSdkVersion(cortexSDK_Version);
-		LOG_INFO("Cortex SDK version v" << (int)cortexSDK_Version[1] << "."
-		                                << (int)cortexSDK_Version[2] << "." << (int)cortexSDK_Version[3]);
+		LOG_INFO("Cortex SDK version v"
+			<< (int)cortexSDK_Version[1] << "."
+			<< (int)cortexSDK_Version[2] << "."
+			<< (int)cortexSDK_Version[3]);
 
 		LOG_INFO("Connecting to Cortex server at address " << strCortexAddress
 			<< (strLocalAddress.empty() ? "" : " from address ") << strLocalAddress);
@@ -78,8 +77,6 @@ bool MoCapCortex::initialise()
 		// set up callback handler for logging and streaming
 		Cortex_SetErrorMsgHandlerFunc(callbackMoCapCortexMessageHandler);
 		Cortex_SetDataHandlerFunc(callbackMoCapCortexDataHandler);
-
-		// Cortex_SetClientCommunicationEnabled(true);
 
 		if (Cortex_Initialize(
 				(char*) (strLocalAddress.empty() ? NULL : strLocalAddress.c_str()), 
@@ -112,8 +109,6 @@ bool MoCapCortex::initialise()
 				LOG_INFO("Host port: "           << portHost);
 				LOG_INFO("Host Multicast port: " << portHostMulticast);
 
-				// LOG_INFO("Cortex Communication to Clients is " << (Cortex_IsClientCommunicationEnabled() ? "enabled" : "disabled"));
-
 				// determine unit conversion factor
 				float unitToMillimeter = 1;
 				void *pResponse = NULL;
@@ -126,7 +121,7 @@ bool MoCapCortex::initialise()
 				unitScaleFactor = unitToMillimeter / 1000.0f; // convert millimeters to units
 
 				// determine update rate
-				updateRate = 100.0f;
+				updateRate = 100.0f; // default usually around 100
 				if (Cortex_Request("GetContextFrameRate", &pResponse, &iResponseSize) == RC_Okay)
 				{
 					updateRate = *((float*)pResponse);
@@ -164,7 +159,7 @@ float MoCapCortex::getUpdateRate()
 
 bool MoCapCortex::update()
 {
-	// nothing to do here
+	// nothing to do here > Cortex callback function works in the background
 	return true;
 }
 
@@ -175,7 +170,6 @@ bool MoCapCortex::getSceneDescription(MoCapData& refData)
 	if (initialised)
 	{
 		LOG_INFO("Requesting scene description")
-			
 		sBodyDefs* pBodyDefs = Cortex_GetBodyDefs();
 
 		if (pBodyDefs != NULL)
