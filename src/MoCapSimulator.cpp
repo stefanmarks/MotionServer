@@ -283,16 +283,16 @@ bool MoCapSimulator::processCommand(const std::string& strCommand)
 	std::string strCmdLowerCase;
 	std::transform(strCommand.begin(), strCommand.end(), std::back_inserter(strCmdLowerCase), ::tolower);
 
-	if (strCmdLowerCase == "lossy" )
+	if (strCmdLowerCase == "enabletrackingloss" )
 	{
 		trackingUnreliable = true;
-		LOG_INFO("Tracking unreliable/lossy");
+		LOG_INFO("Tracking loss enabled");
 		processed = true;
 	}
-	else if (strCmdLowerCase == "lossless")
+	else if (strCmdLowerCase == "disabletrackingloss")
 	{
 		trackingUnreliable = false;
-		LOG_INFO("Tracking reliable/lossless");
+		LOG_INFO("Tracking loss disabled");
 		processed = true;
 	}
 
