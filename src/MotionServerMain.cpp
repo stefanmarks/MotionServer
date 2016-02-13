@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 7, 0, 0 };
+const int arrServerVersion[4] = { 1, 7, 1, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,7 +77,8 @@ struct sConfiguration
 	int         iNatNetCommandPort;
 	int         iNatNetDataPort;
 
-	bool        writeFile;
+	bool        writeData;
+	std::string dataFilename;
 
 	bool        useCortex;
 	std::string strRemoteCortexAddress;
@@ -105,7 +106,8 @@ struct sConfiguration
 
 		iInteractionControllerPort = 0;
 
-		writeFile              = false;
+		writeData    = false;
+		dataFilename = "";
 
 		useCortex              = true;
 		strRemoteCortexAddress = "127.0.0.1";
@@ -174,22 +176,23 @@ void mocapTimerThread(int updateInterval);
 void printUsage()
 {
 	std::cout << "Command line arguments:" << std::endl
-		<< "-h\t\t\tPrint Help" << std::endl
-		<< "-serverName\t\tName of MoCap Server" << std::endl
-		<< "-serverAddr\t\tIP Address of MoCap Server IP address" << std::endl
-		<< "-unicast\t\tUse Unicast data transfer (default)" << std::endl
-		<< "-multicast\t\tUse Multicast data transfer" << std::endl
-		<< "-multicastAddr\t\tIP Address of multicast MoCap Server IP address" << std::endl
+		<< "-h                                    Print Help" << std::endl
+		<< "-serverName <name>                    Name of MoCap Server" << std::endl
+		<< "-serverAddr <address>                 IP Address of MoCap Server IP address" << std::endl
+		<< "-unicast                              Use Unicast data transfer (default)" << std::endl
+		<< "-multicast                            Use Multicast data transfer" << std::endl
+		<< "-multicastAddr <address>              IP Address of multicast MoCap Server IP address" << std::endl
 #ifdef USE_OCULUS_RIFT
-		<< "-noHMD\t\t\tNo Oculus Rift detection" << std::endl
+		<< "-noHMD                                No Oculus Rift detection" << std::endl
 #endif
 #ifdef USE_CORTEX
-		<< "-noCortex\t\tNo Cortex detection" << std::endl
-		<< "-cortexRemoteAddr\tIP Address of remote interface to connect to Cortex" << std::endl
-		<< "-cortexLocalAddr\tIP Address of local interface to connect to Cortex" << std::endl
+		<< "-noCortex                             No Cortex detection" << std::endl
+		<< "-cortexRemoteAddr <address>           IP Address of remote interface to connect to Cortex" << std::endl
+		<< "-cortexLocalAddr <address>            IP Address of local interface to connect to Cortex" << std::endl
 #endif
-		<< "-interactionControllerPort\tCOM port of XBee interaction controller (-1: scan)" << std::endl
-		<< "-writeFile\tWrite MoCap Data into timestamped files" << std::endl
+		<< "-interactionControllerPort <number>   COM port of XBee interaction controller (-1: scan)" << std::endl
+		<< "-readFile <filename>                  Read and loop MoCap Data from a file" << std::endl
+		<< "-writeFile                            Write MoCap Data into timestamped files" << std::endl
 		;
 }
 
@@ -235,7 +238,7 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 			}
 			else if (strArg == "-writefile")
 			{
-				config.writeFile = true;
+				config.writeData = true;
 			}
 #ifdef USE_OCULUS_RIFT
 			else if (strArg == "-nohmd")
@@ -273,6 +276,11 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 				config.strNatNetServerMulticastAddress = strParam1;
 				config.useMulticast = true;
 			}
+			else if (strArg == "-readfile")
+			{
+				// file to read
+				config.dataFilename = strParam1;
+			}
 #ifdef USE_CORTEX
 			else if (strArg == "-cortexremoteaddr")
 			{
@@ -309,6 +317,23 @@ MoCapSystem* detectMoCapSystem()
 {
 	MoCapSystem* pSystem = NULL;
 
+	if (pSystem == NULL && !config.dataFilename.empty())
+	{
+		// query data file
+		MoCapFileReader* pReader = new MoCapFileReader(config.dataFilename);
+		if (pReader->initialise())
+		{
+			LOG_INFO("Reading MoCap data from file '" << config.dataFilename << "'");
+			pSystem = pReader;
+		}
+		else
+		{
+			LOG_WARNING("Could not open file '" << config.dataFilename << "' for reading");
+			pReader->deinitialise();
+			delete pReader;
+		}
+	}
+
 #ifdef USE_CORTEX
 	if (pSystem == NULL && config.useCortex)
 	{
@@ -322,7 +347,7 @@ MoCapSystem* detectMoCapSystem()
 		}
 		else
 		{
-			LOG_INFO("Cortex Server not found");
+			LOG_WARNING("Cortex Server not found");
 			pCortex->deinitialise();
 			delete pCortex;
 		}
@@ -343,7 +368,7 @@ MoCapSystem* detectMoCapSystem()
 		}
 		else
 		{
-			LOG_INFO("Oculus Rift not found");
+			LOG_WARNING("Oculus Rift not found");
 			pHMD->deinitialise();
 			delete pHMD;
 		}
@@ -360,7 +385,7 @@ MoCapSystem* detectMoCapSystem()
 	}
 
 	// are we supposed to write data into a file?
-	if (config.writeFile)
+	if (config.writeData)
 	{
 		pMoCapFileWriter = new MoCapFileWriter(pSystem->getUpdateRate());
 	}
@@ -443,10 +468,9 @@ bool createServer()
 		destroyServer(); 
 	}
 
-	LOG_INFO("Creating server instance");
-
 	// create new NatNet server
 	mtxServer.lock();
+	LOG_INFO("Creating server instance");
 
 	const int iConnectionType = config.useMulticast ? ConnectionType_Multicast : ConnectionType_Unicast;
 	pServer = new NatNetServer(iConnectionType);
@@ -460,7 +484,6 @@ bool createServer()
 	         << (int) arrServerNatNetVersion[3]);
 
 	// set callbacks
-	pServer->SetMessageResponseCallback(callbackNatNetServerRequestHandler);
 	pServer->SetVerbosityLevel(Verbosity_Info);
 	pServer->SetErrorMessageCallback(callbackNatNetServerMessageHandler);
 
@@ -494,6 +517,7 @@ bool createServer()
 	else
 	{
 		LOG_ERROR("Could not initialise server");
+		mtxServer.unlock();
 		destroyServer();
 	}
 
@@ -592,9 +616,14 @@ bool destroyServer()
 	{
 		mtxServer.lock();
 		LOG_INFO("Shutting down server");
+		
+		pServer->SetMessageResponseCallback(NULL);
 		pServer->Uninitialize();
+		pServer->SetErrorMessageCallback(NULL);
+		
 		delete pServer;
 		pServer = NULL;
+
 		LOG_INFO("Server shut down");
 		mtxServer.unlock();
 	}
@@ -676,22 +705,16 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 		{
 			// Client does not typically poll for data, but we accomodate it here anyway
 			// note: need to return response on same thread as caller
-			mtxMoCap.lock();
-			bool gotFrameOfData = (pMoCapSystem && pMocapData && pMoCapSystem->getFrameData(*pMocapData));
-			mtxMoCap.unlock();
-			if (gotFrameOfData)
+
+			// This function does not call pMoCapSystem->getFrameData()
+			// because the streaming thread does that.
+			// Additional polling might mess up the timing
+			mtxServer.lock();
+			if (pServer && pMocapData)
 			{
-				mtxServer.lock();
-				if (pServer)
-				{
-					pServer->PacketizeFrameOfMocapData(&(pMocapData->frame), pPacketOut);
-				}
-				mtxServer.unlock();
+				pServer->PacketizeFrameOfMocapData(&(pMocapData->frame), pPacketOut);
 			}
-			else
-			{
-				LOG_ERROR("Could not retrieve frame");
-			}
+			mtxServer.unlock();
 			requestHandled = true;
 			break;
 		}
@@ -765,11 +788,14 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
  */
 void mocapTimerThread(int updateInterval)
 {
-	std::chrono::milliseconds sleepTime = std::chrono::milliseconds(updateInterval);
-	
+	const std::chrono::milliseconds       sleepTime(updateInterval);
+	std::chrono::system_clock::time_point nextTick(std::chrono::system_clock::now() + sleepTime);
+
 	while (serverRunning)
 	{
-		std::this_thread::sleep_for(sleepTime);
+		std::this_thread::sleep_until(nextTick);
+		nextTick = std::chrono::system_clock::now() + sleepTime;
+
 		// mtxMoCap.lock(); < this would collide with the lock in signalNewFrame that is probably being called
 		if (serverRunning && pMoCapSystem)
 		{
@@ -814,7 +840,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 			// start server
 			if ( createServer() )
 			{
-				serverRunning = true;
+				serverRunning    = true;
 				serverRestarting = false;
 
 				// prepare scene description
@@ -842,13 +868,16 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 					pMoCapFileWriter->writeSceneDescription(*pMocapData);
 				}
 
+				// start responding to packets
+				pServer->SetMessageResponseCallback(callbackNatNetServerRequestHandler);
+
 				// start streaming thread
 				int updateInterval = (int)(1000.0 / pMoCapSystem->getUpdateRate()); // from FPS to milliseconds
 				std::thread streamingThread(mocapTimerThread, updateInterval);
 				LOG_INFO("Streaming thread started");
 
 				// That's all folks
-				LOG_INFO("Motion Server started");
+				LOG_INFO("MotionServer started");
 
 				// construct possible command help output
 				std::stringstream commands;
@@ -898,7 +927,14 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 					}
 				} while (serverRunning);
 
+				LOG_INFO("Stopping MotionServer");
+
+				// stop responding to packets
+				pServer->SetMessageResponseCallback(NULL);
+
+				// wait for streaming thread
 				streamingThread.join();
+
 				LOG_INFO("Streaming thread stopped");
 			}
 
@@ -935,7 +971,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 
 			if (serverRestarting)
 			{
-				LOG_INFO("Restarting Motion Server");
+				LOG_INFO("Restarting MotionServer");
 			}
 		} 
 		while (serverRestarting);

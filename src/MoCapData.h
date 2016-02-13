@@ -14,6 +14,7 @@ public:
 	~MoCapData();
 
 private:
+
 	// Internal methods for freeing dynamically allocated data structures
 	void freeNatNetDescription();
 	void freeNatNetMarkerSetDescription(sMarkerSetDescription* pMarkerSet);

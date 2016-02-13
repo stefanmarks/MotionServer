@@ -8,9 +8,28 @@
 #include "VectorMath.h"
 
 #include <fstream>
+#include <sstream>
 #include <string>
 
 
+///////////////////////////////////////////////////////////////////////////////
+//
+class IFileWriter
+{
+public:
+	virtual bool open(const std::string& filename) = 0;
+	virtual bool close() = 0;
+	virtual bool isOK() = 0;
+	virtual void write(int   iValue) = 0;
+	virtual void write(float fValue) = 0;
+	virtual void write(const char* czString) = 0;
+	virtual void writeTag(const char* czString) = 0;
+	virtual void nextLine() = 0;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
 class MoCapFileWriter 
 {
 public:
@@ -48,6 +67,7 @@ private:
 	float         updateRate;
 	std::ofstream output;
 	bool          headerWritten, lineStarted;
+	int           lastFrame;
 	char          czBuf[256];
 };
 
@@ -69,11 +89,37 @@ public:
 	virtual bool  deinitialise();
 
 private:
+	bool readHeader();
 
-	int           fileVersion;
-	float         updateRate;
-	std::string   strFilename;
-	std::ifstream input;
-	std::string   activeLine;
+	void readMarkerSetDescription( sMarkerSetDescription&  descr, sMarkerSetData&  data);
+	void readRigidBodyDescription( sRigidBodyDescription&  descr, sRigidBodyData&  data);
+	void readSkeletonDescription(  sSkeletonDescription&   descr, sSkeletonData&   data);
+	void readForcePlateDescription(sForcePlateDescription& descr, sForcePlateData& data);
+
+	void readMarkerSetData( sMarkerSetData&  data);
+	void readRigidBodyData( sRigidBodyData&  data);
+	void readSkeletonData(  sSkeletonData&   data);
+	void readForcePlateData(sForcePlateData& data);
+
+	void        nextLine();
+	void        skipDelimiter();
+	int         readInt();
+	int         readInt(int min, int max);
+	float       readFloat();
+	const char* readString();
+	bool        readTag(const char* czString);
+
+private:
+
+	int                fileVersion;
+	float              updateRate;
+	std::string        strFilename;
+	std::ifstream      input;
+	char*              pBuf;
+	char               czBuf[256];
+	const char*        pRead;
+	int                bufSize;
+	std::streampos     posDescriptions, posFrames;
+	bool               fileOK, headerOK;
 };
 
