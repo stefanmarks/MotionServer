@@ -46,8 +46,10 @@ const int SKELETON_COUNT   = 0;
 
 
 MoCapSimulator::MoCapSimulator() :
-	initialised(false)
+	initialised(false),
+	isPlaying(true)
 {
+	// nothing else to do
 }
 
 
@@ -87,20 +89,33 @@ float MoCapSimulator::getUpdateRate()
 }
 
 
+bool MoCapSimulator::isRunning()
+{
+	return isPlaying;
+}
+
+
+void MoCapSimulator::setRunning(bool running)
+{
+	isPlaying = running;
+}
+
 bool MoCapSimulator::update()
 {
-	iFrame += 1;
-	fTime  += (1.0f / _frameRate);
-
-	for (int b = 0; b < RIGID_BODY_COUNT; b++)
+	if (isPlaying)
 	{
-		// calculate new positions/rotations
-		float t    = fTime * RIGID_BODY_PARAMS[b].speed;
-		float r    = RIGID_BODY_PARAMS[b].radius;
-		float oPos = RIGID_BODY_PARAMS[b].posOffset;
-		float oRot = RIGID_BODY_PARAMS[b].rotOffset;
-		switch (RIGID_BODY_PARAMS[b].axis)
+		iFrame += 1;
+		fTime += (1.0f / _frameRate);
+
+		for (int b = 0; b < RIGID_BODY_COUNT; b++)
 		{
+			// calculate new positions/rotations
+			float t = fTime * RIGID_BODY_PARAMS[b].speed;
+			float r = RIGID_BODY_PARAMS[b].radius;
+			float oPos = RIGID_BODY_PARAMS[b].posOffset;
+			float oRot = RIGID_BODY_PARAMS[b].rotOffset;
+			switch (RIGID_BODY_PARAMS[b].axis)
+			{
 			case 0:
 			{
 				arrPos[b].set(oPos, r * cos(t), r * sin(t));   // zero degrees = Y+ up
@@ -112,7 +127,7 @@ bool MoCapSimulator::update()
 				arrPos[b].set(r * -sin(t), oPos, r * -cos(t)); // zero degrees = Z- forwards
 				arrRot[b].fromAxisAngle(0, 1, 0, t);
 				// apply pitch 
-				Quaternion rotX(1, 0, 0, oRot * (float) (M_PI / 180));
+				Quaternion rotX(1, 0, 0, oRot * (float)(M_PI / 180));
 				arrRot[b] = arrRot[b].mult(rotX);
 				break;
 			}
@@ -122,23 +137,24 @@ bool MoCapSimulator::update()
 				arrRot[b].fromAxisAngle(0, 0, 1, t);
 				break;
 			}
-		}
+			}
 
-		if (trackingUnreliable)
-		{
-			if (rand() < RAND_MAX / 1000)
+			if (trackingUnreliable)
 			{
-				arrTrackingLostCounter[b] = rand() * 100 / RAND_MAX;
+				if (rand() < RAND_MAX / 1000)
+				{
+					arrTrackingLostCounter[b] = rand() * 100 / RAND_MAX;
+				}
 			}
 		}
-	}
 
-	/*
-	for (int s = 0; s < SKELETON_COUNT; s++)
-	{
+		/*
+		for (int s = 0; s < SKELETON_COUNT; s++)
+		{
 
+		}
+		*/
 	}
-	*/
 
 	signalNewFrame();
 

@@ -24,6 +24,8 @@ public:
 	virtual bool  initialise();
 	virtual bool  isActive();
 	virtual float getUpdateRate();
+	virtual bool  isRunning();
+	virtual void  setRunning(bool running);
 	virtual bool  update();
 	virtual bool  getSceneDescription(MoCapData& refData);
 	virtual bool  getFrameData(MoCapData& refData);
@@ -64,6 +66,7 @@ private:
 private:
 
 	bool         initialised;
+	bool         isPlaying;
 	std::string  strCortexAddress;
 	std::string  strLocalAddress;
 

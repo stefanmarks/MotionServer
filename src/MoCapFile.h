@@ -147,6 +147,8 @@ public:
 	virtual bool  initialise();
 	virtual bool  isActive();
 	virtual float getUpdateRate();
+	virtual bool  isRunning();
+	virtual void  setRunning(bool running);
 	virtual bool  update();
 	virtual bool  getSceneDescription(MoCapData& refData);
 	virtual bool  getFrameData(MoCapData& refData);
@@ -173,6 +175,7 @@ private:
 	void readForcePlateData(sForcePlateData& data);
 
 	void        nextLine();
+	void        rewindLine();
 	void        skipDelimiter();
 	int         readInt();
 	int         readInt(int min, int max);
@@ -194,5 +197,7 @@ private:
 
 	std::streampos     posDescriptions, posFrames;
 	bool               fileOK, headerOK;
+
+	bool               isPlaying, isLooping;
 };
 

@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 7, 2, 0 };
+const int arrServerVersion[4] = { 1, 7, 3, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -871,6 +871,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				commands
 					<< std::endl << "\tq:Quit"
 					<< std::endl << "\tr:Restart"
+					<< std::endl << "\tp:Pause/Unpause"
 					<< std::endl << "\td:Print Model Definitions"
 					<< std::endl << "\tf:Print Frame Data";
 				LOG_INFO("Commands:" << commands.str())
@@ -892,14 +893,24 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 					{
 						restartServer();
 					}
+					else if (strCmdLowerCase == "p")
+					{
+						// pause/unpause
+						bool running = pMoCapSystem->isRunning();
+						pMoCapSystem->setRunning(!running);
+						running = pMoCapSystem->isRunning();
+						LOG_INFO((running ? "Resumed playback" : "Paused"));
+					}
 					else if (strCmdLowerCase == "d")
 					{
+						// print definitions
 						std::stringstream strm;
 						printModelDefinitions(strm, pMocapData->description);
 						std::cout << strm.str() << std::endl;
 					}
 					else if (strCmdLowerCase == "f")
 					{
+						// print frame
 						std::stringstream strm;
 						printFrameOfData(strm, pMocapData->frame);
 						std::cout << strm.str() << std::endl;

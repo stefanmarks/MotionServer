@@ -41,10 +41,25 @@ public:
 	virtual float getUpdateRate() = 0;
 
 	/**
-	 * Forces an update of the MoCap data.
+	 * Checks whether the MoCap system is running or paused.
 	 *
-	 * @return <code>true</code> if the update was successful
+	 * @return <code>true</code> if the system is running
 	 */
+	virtual bool isRunning() = 0;
+
+	/**
+	 * Starts or stops the MoCap system.
+	 *
+	 * @param running  <code>true</code> to start the system,
+	 *                 <code>false</code> to pause/stop it
+	 */
+	virtual void setRunning(bool running) = 0;
+
+	/**
+	* Forces an update of the MoCap data.
+	*
+	* @return <code>true</code> if the update was successful
+	*/
 	virtual bool update() = 0;
 
 	/**

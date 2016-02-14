@@ -45,6 +45,7 @@ or requested via email from [MotionAnalysis](http://www.motionanalysis.com/html/
 ### Generic commands
 * `q`  Quit server
 * `r`  Restart server
+* `p`  Pause/unpause server
 * `d`  Print current scene description
 * `f`  Print current scene data
 

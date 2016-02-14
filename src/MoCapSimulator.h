@@ -20,6 +20,8 @@ public:
 	virtual bool  initialise();
 	virtual bool  isActive();
 	virtual float getUpdateRate();
+	virtual bool  isRunning();
+	virtual void  setRunning(bool running);
 	virtual bool  update();
 	virtual bool  getSceneDescription(MoCapData& refData);
 	virtual bool  getFrameData(MoCapData& refData);
@@ -28,6 +30,7 @@ public:
 
 private:
 	bool                    initialised;
+	bool                    isPlaying;
 	int                     iFrame;
 	float                   fTime;
 	std::vector<Vector3D>   arrPos;

@@ -49,6 +49,7 @@ void __cdecl callbackMoCapCortexDataHandler(sFrameOfData* pFrameOfData)
 
 MoCapCortex::MoCapCortex(const std::string &strCortexAddress, const std::string &strLocalAddress) :
 	initialised(false),
+	isPlaying(true),
 	pCortexInfo(NULL),
 	unitScaleFactor(1.0f),
 	updateRate(100.0f),
@@ -154,6 +155,24 @@ bool MoCapCortex::isActive()
 float MoCapCortex::getUpdateRate()
 {
 	return updateRate;
+}
+
+
+bool MoCapCortex::isRunning()
+{
+	return isPlaying;
+}
+
+
+void MoCapCortex::setRunning(bool running)
+{
+	void  *pResponse = NULL;
+	int   iResponseSize = 0;
+	char* czCommand = running ? "LiveMode" : "Pause";
+	if (Cortex_Request(czCommand, &pResponse, &iResponseSize) == RC_Okay)
+	{
+		isPlaying = running;
+	}
 }
 
 

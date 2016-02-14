@@ -345,7 +345,9 @@ MoCapFileReader::MoCapFileReader(const std::string& strFilename) :
 	strFilename(strFilename),
 	updateRate(0),
 	pBuf(NULL), pRead(NULL),
-	bufSize(65536) // should be a good start for a buffer size...
+	bufSize(65536), // should be a good start for a buffer size...
+	isPlaying(true),
+	isLooping(true)
 {
 	pBuf  = new char[bufSize];
 	pRead = pBuf;
@@ -385,6 +387,18 @@ bool MoCapFileReader::isActive()
 float MoCapFileReader::getUpdateRate()
 {
 	return updateRate;
+}
+
+
+bool MoCapFileReader::isRunning()
+{
+	return isPlaying;
+}
+
+
+void MoCapFileReader::setRunning(bool running)
+{
+	isPlaying = running;
 }
 
 
@@ -517,14 +531,32 @@ bool MoCapFileReader::getFrameData(MoCapData& refData)
 	}
 	else if (!input.good())
 	{
-		// end of file reached > clear failbit and loop to beginning
-		input.clear();
-		input.seekg(posFrames);
-		nextLine();
+		if (isLooping)
+		{
+			// end of file reached > clear failbit and loop to beginning
+			input.clear();
+			input.seekg(posFrames);
+			nextLine();
+			LOG_INFO("End of data reached > Looping");
+		}
+		else
+		{
+			// not looping, pause here
+			isPlaying = false;
+			LOG_INFO("End of data reached > Stopping");
+		}
 	}
 	else
 	{
-		nextLine();
+		if (isPlaying)
+		{
+			nextLine();
+		}
+		else
+		{
+			// get "stuck" on that current line
+			rewindLine();
+		}
 	}
 
 	if (success && input.good())
@@ -824,6 +856,12 @@ void MoCapFileReader::nextLine()
 			repeat = false;
 		}
 	} 
+	pRead = pBuf;
+}
+
+
+void MoCapFileReader::rewindLine()
+{
 	pRead = pBuf;
 }
 
