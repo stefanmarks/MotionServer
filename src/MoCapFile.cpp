@@ -677,8 +677,8 @@ bool MoCapFileReader::readHeader()
 			int nDescriptions = readInt();
 			LOG_INFO("Opened MoCap data file '" << strFilename << "' "
 				<< "(v" << fileVersion 
-				<< ", " << updateRate << "Hz Sample Rate"
-				<< ", " << nDescriptions << " descriptions)");
+				<< ", Sample Rate: " << updateRate << "Hz"
+				<< ", Descriptions: " << nDescriptions << ")");
 
 			success = (fileVersion == 1);
 		}
