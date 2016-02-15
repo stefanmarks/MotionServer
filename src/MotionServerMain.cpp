@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 7, 3, 0 };
+const int arrServerVersion[4] = { 1, 7, 4, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -145,6 +145,7 @@ InteractionSystem* pInteractionSystem;
 // Miscellaneous
 // 
       int  frameCallbackCounter   = 0;  // counter for MoCap frame callbacks
+	  int  frameCallbackModulo    = 60; // max counter to achieve 1Hz callback animation rate
       int  callbackAnimCounter    = 0;  // counter for current callback animation index
 const char arrCallbackAnimation[] = { '-', '/', '|', '\\' }; // characters for the callback animation
 
@@ -562,7 +563,7 @@ void signalNewFrame()
 			callbackAnimCounter = (callbackAnimCounter + 1) % (sizeof(arrCallbackAnimation) / sizeof(arrCallbackAnimation[0]));
 			std::cout << arrCallbackAnimation[callbackAnimCounter] << "\b" << std::flush;
 		}
-		frameCallbackCounter = (frameCallbackCounter + 1) % 60;
+		frameCallbackCounter = (frameCallbackCounter + 1) % frameCallbackModulo;
 	}
 	mtxMoCap.unlock();
 }
@@ -780,7 +781,7 @@ void mocapTimerThread(int updateInterval)
 		// sleep for a while
 		std::this_thread::sleep_until(nextTick);
 		// immediately calculate next tick to compensate for time the update() functions takes
-		nextTick = std::chrono::system_clock::now() + intervalTime;
+		nextTick += intervalTime;
 
 		// mtxMoCap.lock(); < this would collide with the lock in signalNewFrame that is probably being called
 		if (serverRunning && pMoCapSystem)
@@ -860,6 +861,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				// start streaming thread
 				float updateRate     = pMoCapSystem->getUpdateRate(); 
 				int   updateInterval = (int)(1000.0f / updateRate); // convert to millisecond sleep time
+				frameCallbackModulo = (int)updateRate;
 				std::thread streamingThread(mocapTimerThread, updateInterval);
 				LOG_INFO("Streaming thread started (Update rate: " << updateRate << "Hz)");
 
