@@ -524,12 +524,14 @@ void MoCapCortex::convertCortexSegmentToNatNet(double refCortex[], sRigidBodyDat
 		Quaternion rotZ(0, 0, 1, (float)RADIANS(refCortex[5])); // rotZ
 		rot.mult(rotZ).mult(rotY).mult(rotX);
 
-		refNatNet.params = 0x01; // tracking OK
+		refNatNet.params    = 0x01; // tracking OK
+		refNatNet.MeanError = (float)refCortex[6] * unitScaleFactor; // ATTENTION: Abusing mean error for bone length
 	}
 	else
 	{
 		// segment data not available -> use origin and neutral pose
-		refNatNet.params = 0x00; // tracking not OK
+		refNatNet.params    = 0x00; // tracking not OK
+		refNatNet.MeanError = 0.0f; // no "bone length"
 	}
 
 	refNatNet.x = pos.x;
@@ -540,9 +542,6 @@ void MoCapCortex::convertCortexSegmentToNatNet(double refCortex[], sRigidBodyDat
 	refNatNet.qy = rot.y;
 	refNatNet.qz = rot.z;
 	refNatNet.qw = rot.w;
-
-	// ATTENTION: Abusing mean error for bone length
-	refNatNet.MeanError = (float)refCortex[6] * unitScaleFactor;
 }
 
 
