@@ -349,7 +349,7 @@ std::string MoCapFileWriter::getTimestampFilename()
 {
 	time_t tTime = time(NULL);
 	tm     tTimestamp;
-	gmtime_s(&tTimestamp, &tTime);
+	localtime_s(&tTimestamp, &tTime);
 	char czFilename[256];
 	strftime(czFilename, sizeof(czFilename), "MotionServer File %Y_%m_%d_%H_%M_%S.mot", &tTimestamp);
 	std::string strFilename(czFilename);
