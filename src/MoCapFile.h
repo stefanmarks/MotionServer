@@ -119,7 +119,10 @@ private:
 	std::ofstream output;
 	bool          headerWritten, lineStarted;
 	int           lastFrame;
-	char          czBuf[256];
+	char*         pBuf;
+	int           bufSize;
+	char*         pWrite;
+	char          czStrBuf[256];
 };
 
 
@@ -191,9 +194,9 @@ private:
 
 	std::ifstream      input;
 	char*              pBuf;
-	char               czBuf[256];
-	const char*        pRead;
 	int                bufSize;
+	const char*        pRead;
+	char               czStrBuf[256];
 
 	std::streampos     posDescriptions, posFrames;
 	bool               fileOK, headerOK;

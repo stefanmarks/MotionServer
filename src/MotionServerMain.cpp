@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 7, 4, 0 };
+const int arrServerVersion[4] = { 1, 7, 5, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -145,7 +145,7 @@ InteractionSystem* pInteractionSystem;
 // Miscellaneous
 // 
       int  frameCallbackCounter   = 0;  // counter for MoCap frame callbacks
-	  int  frameCallbackModulo    = 60; // max counter to achieve 1Hz callback animation rate
+      int  frameCallbackModulo    = 60; // counter modulo value to achieve 1Hz callback animation rate
       int  callbackAnimCounter    = 0;  // counter for current callback animation index
 const char arrCallbackAnimation[] = { '-', '/', '|', '\\' }; // characters for the callback animation
 

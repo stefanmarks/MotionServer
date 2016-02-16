@@ -33,9 +33,11 @@
 MoCapFileWriter::MoCapFileWriter(float framerate) :
 	updateRate(framerate),
 	headerWritten(false),
-	lastFrame(-1)
+	lastFrame(-1),
+	bufSize(65536) // should be a good start for a buffer size...
 {
-	// nothing else to do yet
+	pBuf   = new char[bufSize];
+	pWrite = pBuf;
 }
 
 
@@ -43,6 +45,12 @@ MoCapFileWriter::~MoCapFileWriter()
 {
 	// clean up
 	closeFile();
+
+	if (pBuf)
+	{
+		delete[] pBuf;
+		pBuf = NULL;
+	}
 }
 
 
@@ -247,7 +255,7 @@ void MoCapFileWriter::writeDelimiter()
 {
 	if (!lineStarted)
 	{
-		output.write("\t", 1);
+		*pWrite++ = '\t';
 	}
 	lineStarted = false;
 }
@@ -256,18 +264,19 @@ void MoCapFileWriter::writeDelimiter()
 void MoCapFileWriter::write(float fValue)
 {
 	writeDelimiter();
-	int len = sprintf_s(czBuf, "%f", fValue) - 1;
-	while ((len > 0) && (czBuf[len] == '0')) len--; // cut trailing zeroes
-	if    ((len > 0) && (czBuf[len] == '.')) len--; // and if possible even the decimal dot
-	output.write(czBuf, len + 1);
+	size_t bufRemaining = bufSize - (pWrite - pBuf); // how much buffer is left
+	int len = sprintf_s(pWrite, bufRemaining, "%f", fValue);
+	while ((len > 1) && (pWrite[len - 1] == '0')) len--; // cut trailing zeroes
+	if    ((len > 1) && (pWrite[len - 1] == '.')) len--; // and if possible even the decimal dot
+	pWrite += len;
 }
 
 
 void MoCapFileWriter::write(int iValue)
 {
 	writeDelimiter();
-	int len = sprintf_s(czBuf, "%d", iValue); 
-	output.write(czBuf, len);
+	size_t bufRemaining = bufSize - (pWrite - pBuf); // how much buffer is left
+	pWrite += sprintf_s(pWrite, bufRemaining, "%d", iValue);
 }
 
 
@@ -275,7 +284,15 @@ void MoCapFileWriter::write(const char* czString)
 {
 	writeDelimiter();
 	// put strings in quotation marks to be safe
-	output << '"' << czString << '"';
+	*pWrite++ = '"';
+	// copy string content
+	int idx = 0;
+	while (czString[idx] != '\0')
+	{
+		*pWrite++ = czString[idx++];
+	}
+	// close quotation mark
+	*pWrite++ = '"';
 }
 
 
@@ -283,13 +300,22 @@ void MoCapFileWriter::writeTag(const char* czString)
 {
 	writeDelimiter();
 	// don't put tags in quotation marks
-	output.write(czString, strlen(czString));
+	int idx = 0;
+	while (czString[idx] != '\0')
+	{
+		*pWrite++ = czString[idx++];
+	}
 }
 
 
 void MoCapFileWriter::nextLine()
 {
-	output << '\n'; // don't use std::endl to avoid unnecessary flush() calls slowing down the write process;
+	// close output string
+	*pWrite++ = '\n';
+	// write to disk
+	output.write(pBuf, pWrite - pBuf);
+	// reset write pointer
+	pWrite = pBuf;
 	lineStarted = true;
 }
 
@@ -897,7 +923,7 @@ const char* MoCapFileReader::readString()
 {
 	skipDelimiter();
 	
-	char* pStr = czBuf;
+	char* pStr = czStrBuf;
 
 	// skip opening quotation mark
 	if (*pRead == '"') { pRead++; }
@@ -913,7 +939,7 @@ const char* MoCapFileReader::readString()
 	
 	*pStr = '\0';
 
-	return czBuf;
+	return czStrBuf;
 }
 
 
