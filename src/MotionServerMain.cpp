@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 7, 5, 0 };
+const int arrServerVersion[4] = { 1, 7, 6, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -168,7 +168,7 @@ bool destroyServer();
 void __cdecl callbackNatNetServerMessageHandler(int iMessageType, char* czMessage);
 int  __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPacketOut, void* pUserData);
 
-void mocapTimerThread(int updateInterval);
+void mocapTimerThread();
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -770,17 +770,18 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
  *
  * @param updateInterval  the interval with which to update the data (in milliseconds)
  */
-void mocapTimerThread(int updateInterval)
+void mocapTimerThread()
 {
 	// create variables to keep track of timing
-	const std::chrono::milliseconds       intervalTime(updateInterval);
-	std::chrono::system_clock::time_point nextTick(std::chrono::system_clock::now() + intervalTime);
+	std::chrono::system_clock::time_point nextTick(std::chrono::system_clock::now() + std::chrono::milliseconds(100));
 
 	while (serverRunning)
 	{
 		// sleep for a while
 		std::this_thread::sleep_until(nextTick);
 		// immediately calculate next tick to compensate for time the update() functions takes
+		// read update rate from MoCap system in case it varies (e.g. file playback speed changed)
+		std::chrono::milliseconds intervalTime((int)(1000.0 / pMoCapSystem->getUpdateRate()));
 		nextTick += intervalTime;
 
 		// mtxMoCap.lock(); < this would collide with the lock in signalNewFrame that is probably being called
@@ -859,10 +860,9 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				pServer->SetMessageResponseCallback(callbackNatNetServerRequestHandler);
 
 				// start streaming thread
-				float updateRate     = pMoCapSystem->getUpdateRate(); 
-				int   updateInterval = (int)(1000.0f / updateRate); // convert to millisecond sleep time
-				frameCallbackModulo = (int)updateRate;
-				std::thread streamingThread(mocapTimerThread, updateInterval);
+				float updateRate    = pMoCapSystem->getUpdateRate(); 
+				frameCallbackModulo = (int) updateRate;
+				std::thread streamingThread(mocapTimerThread);
 				LOG_INFO("Streaming thread started (Update rate: " << updateRate << "Hz)");
 
 				// That's all folks
