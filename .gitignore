@@ -9,7 +9,8 @@
 *.cmd
 *.mot
 *.lnk
-obsolete/
+Obsolete/
+Recordings/
 include/*.h
 lib32/*.lib
 
