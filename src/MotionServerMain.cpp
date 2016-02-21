@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 7, 6, 0 };
+const int arrServerVersion[4] = { 1, 7, 7, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -881,17 +881,22 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				do
 				{
 					LOG_INFO("Enter command:");
-					std::string strCommand;
-					std::cin >> strCommand;
+					// read a line of stdin
+					char cmdBuf[256];
+					std::cin.getline(cmdBuf, sizeof(cmdBuf));
+					std::string strCommand(cmdBuf);
 
+					// convert to lowercase
 					std::string strCmdLowerCase;
 					std::transform(strCommand.begin(), strCommand.end(), std::back_inserter(strCmdLowerCase), ::tolower);
-					
-					if (strCmdLowerCase == "q")
+
+					if ((strCmdLowerCase == "q") ||
+					    (strCmdLowerCase == "quit"))
 					{
 						stopServer();
 					}
-					else if (strCmdLowerCase == "r")
+					else if ((strCmdLowerCase == "r") ||
+					         (strCmdLowerCase == "restart"))
 					{
 						restartServer();
 					}

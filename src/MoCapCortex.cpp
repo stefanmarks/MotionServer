@@ -270,7 +270,6 @@ bool MoCapCortex::processCommand(const std::string& strCommand)
 		processed = true;
 	}
 
-	// nothing specific to do here (yet)
 	return processed;
 }
 

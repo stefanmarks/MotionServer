@@ -158,6 +158,20 @@ public:
 	virtual bool  processCommand(const std::string& strCommand);
 	virtual bool  deinitialise();
 
+	/**
+	 * Sets the playback speed of the file (0...INF)
+	 *
+	 * @return  the current playback speed
+	 */
+	float getSpeed();
+
+	/**
+	 * Sets the playback speed of the file (0...INF).
+	 *
+	 * @param speed  the new playback speed
+	 */
+	void  setSpeed(float speed);
+
 private:
 
 	/**
@@ -202,5 +216,6 @@ private:
 	bool               fileOK, headerOK;
 
 	bool               isPlaying, isLooping;
+	float              playbackSpeed;
 };
 

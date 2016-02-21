@@ -3,10 +3,13 @@
 #include "Logging.h"
 #undef   LOG_CLASS
 
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <sstream>
+#include <string>
+
 #include <time.h>
-//#include <type>
 
 
 // tag names for file sections or identifiers
@@ -367,13 +370,18 @@ std::string MoCapFileWriter::getTimestampFilename()
 #undef  LOG_CLASS
 #define LOG_CLASS "MoCapFileReader"
 
+#define MIN_PLAYBACK_SPEED 0.01f
+#define MAX_PLAYBACK_SPEED 10.0f
+
+
 MoCapFileReader::MoCapFileReader(const std::string& strFilename) :
 	strFilename(strFilename),
 	updateRate(0),
 	pBuf(NULL), pRead(NULL),
 	bufSize(65536), // should be a good start for a buffer size...
 	isPlaying(true),
-	isLooping(true)
+	isLooping(true),
+	playbackSpeed(1.0f)
 {
 	pBuf  = new char[bufSize];
 	pRead = pBuf;
@@ -412,7 +420,7 @@ bool MoCapFileReader::isActive()
 
 float MoCapFileReader::getUpdateRate()
 {
-	return updateRate;
+	return updateRate * playbackSpeed;
 }
 
 
@@ -658,8 +666,24 @@ bool MoCapFileReader::getFrameData(MoCapData& refData)
 
 bool MoCapFileReader::processCommand(const std::string& strCommand)
 {
-	// no commands recognised
-	return false;
+	bool processed = false;
+	
+	// convert commandto lowercase
+	std::string strCmdLowerCase;
+	std::transform(strCommand.begin(), strCommand.end(), std::back_inserter(strCmdLowerCase), ::tolower);
+	
+	if (strCmdLowerCase.find("setspeed") == 0)
+	{
+		size_t paramPos = strCmdLowerCase.find_first_of(" ");
+		if (paramPos > 0)
+		{
+			float speed = atof(strCmdLowerCase.c_str() + paramPos);
+			setSpeed(speed);
+			processed = true;
+		}
+	}
+
+	return processed;
 }
 
 
@@ -680,6 +704,21 @@ bool MoCapFileReader::deinitialise()
 	}
 
 	return true;
+}
+
+
+float MoCapFileReader::getSpeed()
+{
+	return playbackSpeed;
+}
+
+
+void MoCapFileReader::setSpeed(float speed)
+{
+	if (speed < MIN_PLAYBACK_SPEED) { speed = MIN_PLAYBACK_SPEED; }
+	if (speed > MAX_PLAYBACK_SPEED) { speed = MAX_PLAYBACK_SPEED; }
+	playbackSpeed = speed;
+	LOG_INFO("Playback Speed changed to " << playbackSpeed);
 }
 
 
