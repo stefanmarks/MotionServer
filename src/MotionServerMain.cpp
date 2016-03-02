@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 7, 7, 0 };
+const int arrServerVersion[4] = { 1, 7, 8, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -109,7 +109,7 @@ struct sConfiguration
 		writeData    = false;
 		dataFilename = "";
 
-		useCortex              = true;
+		useCortex              = false;
 		strRemoteCortexAddress = "127.0.0.1";
 		strLocalCortexAddress  = strRemoteCortexAddress;
 

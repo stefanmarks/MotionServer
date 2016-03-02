@@ -32,6 +32,7 @@ const sRigidBodyMovementParams RIGID_BODY_PARAMS[] =
 	{ "Walk_5m",  1,   -5,  1.5,  -7, 1.0f /  40 }, // "
 	{ "Walk_10m", 1,  -10,  1.5,  -5, 1.0f /  50 }, // "
 	{ "Oculus",   1,   -3,  1.5, -15, 1.0f /  30 },
+	{ "Oculus_C", 1,   -2,  1.5, -20, 1.0f /  30 },
 	{ "RotX_pos", 0,  0.5,  1.0,   0, 1.0f /  10 },
 	{ "RotX_neg", 0, -0.5, -1.0,   0, 1.0f / -10 },
 	{ "RotY_pos", 1,  0.5,  1.0,   0, 1.0f /  10 },
