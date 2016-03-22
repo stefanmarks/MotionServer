@@ -101,6 +101,8 @@ private:
 	void writeSkeletonDescription(  const sSkeletonDescription&   descr);
 	void writeForcePlateDescription(const sForcePlateDescription& descr);
 
+	void writeFrameDataColumnNames(const MoCapData& refData);
+
 	void writeMarkerSetData( const sMarkerSetData&  data);
 	void writeRigidBodyData( const sRigidBodyData&  data);
 	void writeSkeletonData(  const sSkeletonData&   data);
@@ -111,13 +113,15 @@ private:
 	void write(float fValue);
 	void write(const char* czString);
 	void writeTag(const char* czString);
+	void writeColumnName(const char* czString1, const char* czString2 = NULL, const char* czString3 = NULL);
+	void writeColumnNames(const char* czString1, const char* czString2, int count, ...);
 	void nextLine();
 
 private:
 
 	float         updateRate;
 	std::ofstream output;
-	bool          headerWritten, lineStarted;
+	bool          fileHeaderWritten, columnHeaderWritten, lineStarted;
 	int           lastFrame;
 	char*         pBuf;
 	int           bufSize;

@@ -1,6 +1,7 @@
 #include "MoCapData.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <memory.h>
 
 
@@ -16,6 +17,86 @@ MoCapData::~MoCapData()
 {
 	freeNatNetDescription();
 	freeNatNetFrameData();
+}
+
+
+sMarkerSetDescription* MoCapData::findMarkerSetDescription(const sMarkerSetData& refMarkerSetData) const
+{
+	sMarkerSetDescription* pResult = NULL;
+	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
+	{
+		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
+		if (descr.type == Descriptor_MarkerSet)
+		{
+			// compare markersets by name
+			if (strcmp(descr.Data.MarkerSetDescription->szName, refMarkerSetData.szName) == 0)
+			{
+				pResult = descr.Data.MarkerSetDescription;
+				break;
+			}
+		}
+	}
+	return pResult;
+}
+
+
+sRigidBodyDescription* MoCapData::findRigidBodyDescription(const sRigidBodyData& refRigidBodyData) const
+{
+	sRigidBodyDescription* pResult = NULL;
+	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
+	{
+		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
+		if (descr.type == Descriptor_RigidBody)
+		{
+			// compare rigid body by ID
+			if (descr.Data.RigidBodyDescription->ID == refRigidBodyData.ID)
+			{
+				pResult = descr.Data.RigidBodyDescription;
+				break;
+			}
+		}
+	}
+	return pResult;
+}
+
+
+sSkeletonDescription* MoCapData::findSkeletonDescription(const sSkeletonData& refSkeletonData) const
+{
+	sSkeletonDescription* pResult = NULL;
+	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
+	{
+		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
+		if (descr.type == Descriptor_Skeleton)
+		{
+			// compare skeleton by ID
+			if (descr.Data.SkeletonDescription->skeletonID == refSkeletonData.skeletonID)
+			{
+				pResult = descr.Data.SkeletonDescription;
+				break;
+			}
+		}
+	}
+	return pResult;
+}
+
+
+sForcePlateDescription* MoCapData::findForcePlateDescription(const sForcePlateData& refForcePlateData) const
+{
+	sForcePlateDescription* pResult = NULL;
+	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
+	{
+		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
+		if (descr.type == Descriptor_ForcePlate)
+		{
+			// compare force plate by ID
+			if (descr.Data.ForcePlateDescription->ID == refForcePlateData.ID)
+			{
+				pResult = descr.Data.ForcePlateDescription;
+				break;
+			}
+		}
+	}
+	return pResult;
 }
 
 

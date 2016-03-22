@@ -10,6 +10,7 @@
 #include <string>
 
 #include <time.h>
+#include <stdarg.h>
 
 
 // tag names for file sections or identifiers
@@ -35,7 +36,8 @@
 
 MoCapFileWriter::MoCapFileWriter(float framerate) :
 	updateRate(framerate),
-	headerWritten(false),
+	fileHeaderWritten(false),
+	columnHeaderWritten(false),
 	lastFrame(-1),
 	bufSize(65536) // should be a good start for a buffer size...
 {
@@ -101,9 +103,10 @@ bool MoCapFileWriter::writeSceneDescription(const MoCapData& refData)
 		// prepare frame data block
 		writeTag(TAG_SECTION_FRAMES); nextLine();
 
-		success       = true;
-		headerWritten = true;
-		lastFrame     = -1;
+		success             = true;
+		fileHeaderWritten   = true;
+		columnHeaderWritten = false;
+		lastFrame           = -1;
 		LOG_INFO("Header written");
 	}
 
@@ -121,35 +124,49 @@ bool MoCapFileWriter::writeFrameData(const MoCapData& refData)
 		// frame# repeat > skip (but don't signal as error)
 		success = true;
 	}
-	else if (headerWritten && output.is_open())
+	else if (fileHeaderWritten && output.is_open())
 	{
+		// do we still need to write the column header?
+		// (and don't move this to writeSceneDescription, because the data structure is probably not complete there,
+		//  -> you need to wait for the first data frame)
+		if (!columnHeaderWritten)
+		{
+			// write line with column names (e.g., for reading into a spreadsheet)
+			writeFrameDataColumnNames(refData); nextLine();
+			columnHeaderWritten = true;
+		}
+
 		// frame number and latency
 		write(frame.iFrame);
 		write(frame.fLatency);
 		
 		// markersets
-		writeTag(TAG_MARKERSET); write(frame.nMarkerSets);
+		writeTag(TAG_MARKERSET);
+		write(frame.nMarkerSets);
 		for (int mIdx = 0; mIdx < frame.nMarkerSets; mIdx++)
 		{
 			writeMarkerSetData(frame.MocapData[mIdx]);
 		}
 
 		// rigid bodies
-		writeTag(TAG_RIGIDBODY); write(frame.nRigidBodies);
+		writeTag(TAG_RIGIDBODY);
+		write(frame.nRigidBodies);
 		for (int rIdx = 0; rIdx < frame.nRigidBodies; rIdx++)
 		{
 			writeRigidBodyData(frame.RigidBodies[rIdx]);
 		}
 
 		// skeletons
-		writeTag(TAG_SKELETON); write(frame.nSkeletons);
+		writeTag(TAG_SKELETON);
+		write(frame.nSkeletons);
 		for (int sIdx = 0; sIdx < frame.nSkeletons; sIdx++)
 		{
 			writeSkeletonData(frame.Skeletons[sIdx]);
 		}
 
 		// force plates
-		writeTag(TAG_FORCEPLATE); write(frame.nForcePlates);
+		writeTag(TAG_FORCEPLATE); 
+		write(frame.nForcePlates);
 		for (int fIdx = 0; fIdx < frame.nForcePlates; fIdx++)
 		{
 			writeForcePlateData(frame.ForcePlates[fIdx]);
@@ -207,6 +224,158 @@ void MoCapFileWriter::writeForcePlateDescription(const sForcePlateDescription& d
 }
 
 
+void MoCapFileWriter::writeFrameDataColumnNames(const MoCapData& refData)
+{
+	writeColumnName("#frame"); // '#': when reading, consider this line a comment
+	writeColumnName("latency");
+	
+	// markersets
+	writeColumnName("markersetTag");
+	writeColumnName("markersetCount");
+	for (int msIdx = 0; msIdx < refData.frame.nMarkerSets; msIdx++)
+	{
+		const sMarkerSetData&  data  = refData.frame.MocapData[msIdx];
+		// need to get description for individual marker names
+		sMarkerSetDescription* descr = refData.findMarkerSetDescription(data);
+		
+		// construct column prefix from markerset tag followed by "." and markerset name
+		char czMarkersetName[MAX_NAMELENGTH + 2];
+		sprintf_s(czMarkersetName, "%s.%s", TAG_MARKERSET, data.szName);
+
+		// write column names
+		writeColumnName(czMarkersetName, "markerCount");
+		for (int mIdx = 0; mIdx < data.nMarkers; mIdx++)
+		{ 
+			char czMarkerName[MAX_NAMELENGTH];
+			if (descr != NULL)
+			{
+				strcpy_s(czMarkerName, descr->szMarkerNames[mIdx]);
+			}
+			else
+			{
+				// something went wrong -> use generic marker name
+				sprintf_s(czMarkerName, "M%d", mIdx);
+			}
+			writeColumnNames(czMarkersetName, czMarkerName, 3, "x", "y", "z");
+		}
+	}
+
+	// rigid bodies
+	writeColumnName("rigidbodyTag");
+	writeColumnName("rigidbodyCount");
+	for (int rbIdx = 0; rbIdx < refData.frame.nRigidBodies; rbIdx++)
+	{
+		const sRigidBodyData&  data = refData.frame.RigidBodies[rbIdx];
+		
+		// need to get description for individual rigid bodies
+		sRigidBodyDescription* descr = refData.findRigidBodyDescription(data);
+		
+		// construct rigid body name for colum header with tag followed by "."
+		char czRigidBodyName[MAX_NAMELENGTH + 2];
+		if (descr != NULL)
+		{
+			sprintf_s(czRigidBodyName, "%s.%s", TAG_RIGIDBODY, descr->szName);
+		}
+		else
+		{
+			// something went wrong -> use generic name
+			sprintf_s(czRigidBodyName, "%s.%d", TAG_RIGIDBODY, rbIdx);
+		}
+		
+		writeColumnNames(czRigidBodyName, NULL, 10, "id", "x", "y", "z", "qx", "qy", "qz", "qw", "meanError", "params");
+	}
+
+	// skeletons
+	writeColumnName("skeletonTag");
+	writeColumnName("skeletonCount");
+	for (int skIdx = 0; skIdx < refData.frame.nSkeletons; skIdx++)
+	{
+		const sSkeletonData&  data = refData.frame.Skeletons[skIdx];
+
+		// need to get description for individual skeletons
+		sSkeletonDescription* descr = refData.findSkeletonDescription(data);
+
+		// construct rigid body name for colum header with tag followed by "."
+		char czSkeletonName[MAX_NAMELENGTH + 2];
+		if (descr != NULL)
+		{
+			sprintf_s(czSkeletonName, "%s.%s", TAG_SKELETON, descr->szName);
+		}
+		else
+		{
+			// something went wrong -> use generic name
+			sprintf_s(czSkeletonName, "%s.%d", TAG_SKELETON, skIdx);
+		}
+
+		writeColumnName(czSkeletonName, "id");
+		writeColumnName(czSkeletonName, "boneCount");
+
+		for (int rbIdx = 0; rbIdx < data.nRigidBodies; rbIdx++)
+		{
+			const sRigidBodyData&  dataBone = data.RigidBodyData[rbIdx];
+			// construct bone/rigid body name for colum header 
+			char czRigidBodyName[MAX_NAMELENGTH];
+			if (descr != NULL)
+			{
+				sprintf_s(czRigidBodyName, "%s", descr->RigidBodies[rbIdx].szName);
+			}
+			else
+			{
+				// something went wrong -> use generic name
+				sprintf_s(czRigidBodyName, "B%d", rbIdx);
+			}
+
+			writeColumnNames(czSkeletonName, czRigidBodyName, 10, "id", "x", "y", "z", "qx", "qy", "qz", "qw", "length", "params");
+		}
+	}
+
+	// force plates
+	writeColumnName("forceplateTag");
+	writeColumnName("forceplateCount");
+	for (int fpIdx = 0; fpIdx < refData.frame.nForcePlates; fpIdx++)
+	{
+		const sForcePlateData&  data = refData.frame.ForcePlates[fpIdx];
+
+		// need to get description for individual force plates
+		sForcePlateDescription* descr = refData.findForcePlateDescription(data);
+
+		// construct force plate name for colum header with tag followed by "."
+		char czForcePlateName[MAX_NAMELENGTH + 2];
+		if (descr != NULL)
+		{
+			sprintf_s(czForcePlateName, "%s.%s", TAG_FORCEPLATE, descr->strSerialNo);
+		}
+		else
+		{
+			// something went wrong -> use generic name
+			sprintf_s(czForcePlateName, "%s.%d", TAG_FORCEPLATE, fpIdx);
+		}
+
+		writeColumnName(czForcePlateName, "id");
+		writeColumnName(czForcePlateName, "channelCount");
+
+		for (int chIdx = 0; chIdx < data.nChannels; chIdx++)
+		{
+			const sAnalogChannelData&  dataChannel = data.ChannelData[chIdx];
+
+			// construct channel name for colum header 
+			char czChannelName[MAX_NAMELENGTH];
+			if (descr != NULL)
+			{
+				sprintf_s(czChannelName, "%s", descr->szChannelNames[chIdx]);
+			}
+			else
+			{
+				// something went wrong -> use generic name
+				sprintf_s(czChannelName, "C%d", chIdx);
+			}
+
+			writeColumnName(czForcePlateName, czChannelName);
+		}
+	}
+}
+
+
 void MoCapFileWriter::writeMarkerSetData(const sMarkerSetData& data)
 {
 	write(data.nMarkers);
@@ -245,11 +414,8 @@ void MoCapFileWriter::writeForcePlateData(const sForcePlateData& data)
 	write(data.nChannels);
 	for (int cIdx = 0; cIdx < data.nChannels; cIdx++)
 	{
-		write(data.ChannelData[cIdx].nFrames);
-		for (int vIdx = 0; vIdx < data.ChannelData[cIdx].nFrames; vIdx++)
-		{
-			write(data.ChannelData[cIdx].Values[vIdx]);
-		}
+		// file stores only one frame per tick, 
+		write(data.ChannelData[cIdx].Values[0]);
 	}
 }
 
@@ -311,6 +477,59 @@ void MoCapFileWriter::writeTag(const char* czString)
 }
 
 
+void MoCapFileWriter::writeColumnName(const char* czString1, const char* czString2, const char* czString3)
+{
+	writeDelimiter();
+
+	// write first part
+	int idx = 0;
+	while (czString1[idx] != '\0')
+	{
+		*pWrite++ = czString1[idx++];
+	}
+
+	// is there a second part to it?
+	if (czString2 != NULL)
+	{
+		*pWrite++ = '.'; // separate with period
+		idx = 0;
+		while (czString2[idx] != '\0')
+		{
+			*pWrite++ = czString2[idx++];
+		}
+	}
+
+	// is there a third part to it?
+	if (czString3 != NULL)
+	{
+		*pWrite++ = '.'; // separate with period
+		idx = 0;
+		while (czString3[idx] != '\0')
+		{
+			*pWrite++ = czString3[idx++];
+		}
+	}
+}
+
+
+void MoCapFileWriter::writeColumnNames(const char* czString1, const char* czString2, int count, ...)
+{
+	va_list arguments;
+	va_start(arguments, count);
+	const char* czArg;
+	
+	// iterate through variable arguments
+	while (count > 0)
+	{
+		czArg = va_arg(arguments, const char*);
+		writeColumnName(czString1, czString2, czArg);
+		count--;
+	};
+
+	va_end(arguments);
+}
+
+
 void MoCapFileWriter::nextLine()
 {
 	// close output string
@@ -329,7 +548,7 @@ bool MoCapFileWriter::openFile()
 	std::string filename = getTimestampFilename();
 	output.open(filename, std::ios::out);
 	
-	headerWritten = false;
+	fileHeaderWritten = false;
 	lineStarted   = true;
 	LOG_INFO("Output file '" << filename << "' opened.");
 
@@ -677,7 +896,7 @@ bool MoCapFileReader::processCommand(const std::string& strCommand)
 		size_t paramPos = strCmdLowerCase.find_first_of(" ");
 		if (paramPos > 0)
 		{
-			float speed = atof(strCmdLowerCase.c_str() + paramPos);
+			float speed = (float) atof(strCmdLowerCase.c_str() + paramPos);
 			setSpeed(speed);
 			processed = true;
 		}
@@ -883,12 +1102,8 @@ void MoCapFileReader::readForcePlateData(sForcePlateData& data)
 	for (int cIdx = 0; cIdx < nChannels; cIdx++)
 	{
 		sAnalogChannelData& refChannel = data.ChannelData[limitArrayIdx(cIdx, data.nChannels)];
-		int nFrames = readInt();
-		refChannel.nFrames = nFrames > MAX_ANALOG_SUBFRAMES ? MAX_ANALOG_SUBFRAMES : nFrames;
-		for (int vIdx = 0; vIdx < nFrames; vIdx++)
-		{
-			refChannel.Values[limitArrayIdx(vIdx, refChannel.nFrames)] = readFloat();
-		}
+		refChannel.nFrames = 1; // file stores only one sample per tick
+		refChannel.Values[0] = readFloat();
 	}
 }
 
@@ -919,6 +1134,12 @@ void MoCapFileReader::nextLine()
 		{
 			// done > get me out
 			repeat = false;
+		}
+
+		// check if line is a comment
+		if (pBuf[0] == '#')
+		{
+			repeat = true;
 		}
 	} 
 	pRead = pBuf;
