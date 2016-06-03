@@ -524,7 +524,9 @@ void MoCapCortex::convertCortexSegmentToNatNet(double refCortex[], sRigidBodyDat
 		rot.mult(rotZ).mult(rotY).mult(rotX);
 
 		refNatNet.params    = 0x01; // tracking OK
-		refNatNet.MeanError = (float)refCortex[6] * unitScaleFactor; // ATTENTION: Abusing mean error for bone length
+		refNatNet.MeanError = (refCortex[0] < XEMPTY) ?
+		                        (float)refCortex[6] * unitScaleFactor : // ATTENTION: Abusing mean error for bone length
+		                        0.0f;
 	}
 	else
 	{
