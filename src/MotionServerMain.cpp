@@ -1,13 +1,13 @@
 /**
  * Motion Server main functions and server thread.
  *
- * (C) 2014-2016 by Stefan Marks
- * Auckland University of Technology
+ * (C) Sentience Lab (sentiencelab@aut.ac.nz), Auckland University of Technology, Auckland, New Zealand
+ *
  */
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 8, 2, 0 };
+const int arrServerVersion[4] = { 1, 8, 3, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
