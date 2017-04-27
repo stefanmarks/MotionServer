@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 8, 3, 0 };
+const int arrServerVersion[4] = { 1, 8, 4, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -721,6 +721,12 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 			else if (strRequestL == "restart")
 			{
 				restartServer(); // TODO: Doesn't work yet due to std::cin waiting for Enter
+			}
+			else if (strRequestL == "getframerate")
+			{
+				float rate = pMoCapSystem->getUpdateRate();
+				sprintf_s(pPacketOut->Data.szData, "%.0f", rate);
+				pPacketOut->nDataBytes = (unsigned short)strlen(pPacketOut->Data.szData) + 1;
 			}
 			else if (strRequestL == "getdatastreamaddress")
 			{

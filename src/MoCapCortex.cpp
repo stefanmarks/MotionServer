@@ -255,7 +255,7 @@ bool MoCapCortex::processCommand(const std::string& strCommand)
 {
 	bool processed = false;
 
-	// convert commandto lowercase
+	// convert command to lowercase
 	std::string strCmdLowerCase;
 	std::transform(strCommand.begin(), strCommand.end(), std::back_inserter(strCmdLowerCase), ::tolower);
 
