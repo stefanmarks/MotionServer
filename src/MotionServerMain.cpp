@@ -54,8 +54,8 @@ const int arrServerVersion[4] = { 1, 8, 4, 0 };
 #include "MoCapCortex.h"
 #endif
 
-#ifdef USE_OCULUS_RIFT
-#include "MoCapOculusRift.h"
+#ifdef USE_KINECT
+#include "MoCapKinect.h"
 #endif
 
 #include "MoCapSimulator.h"
