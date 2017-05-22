@@ -7,7 +7,7 @@
 
 
 // Server version information
-const int arrServerVersion[4] = { 1, 8, 4, 0 };
+const int arrServerVersion[4] = { 1, 9, 0, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,7 +86,7 @@ struct sConfiguration
 
 	int         iInteractionControllerPort;
 
-	bool        useOculusRift;
+	bool        useKinect;
 
 	sConfiguration()
 	{
@@ -113,7 +113,7 @@ struct sConfiguration
 		strRemoteCortexAddress = "127.0.0.1";
 		strLocalCortexAddress  = strRemoteCortexAddress;
 
-		useOculusRift = false;
+		useKinect = false;
 	}
 
 } config;
@@ -181,8 +181,8 @@ void printUsage()
 		<< "-serverName <name>                    Name of MoCap Server (default: 'MotionServer')" << std::endl
 		<< "-serverAddr <address>                 IP Address of MotionServer (default: 127.0.0.1)" << std::endl
 		<< "-multicastAddr <address>              IP Address of multicast MotionServer (default: Unicast)" << std::endl
-#ifdef USE_OCULUS_RIFT
-		<< "-noHMD                                No Oculus Rift detection" << std::endl
+#ifdef USE_KINECT
+		<< "-kinect                               Kinect sensor detection" << std::endl
 #endif
 #ifdef USE_CORTEX
 		<< "-cortexRemoteAddr <address>           IP Address of remote interface to connect to Cortex" << std::endl
@@ -230,10 +230,10 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 			{
 				config.writeData = true;
 			}
-#ifdef USE_OCULUS_RIFT
-			else if (strArg == "-nohmd")
+#ifdef USE_KINECT
+			else if (strArg == "-kinect")
 			{
-				config.useOculusRift = false;
+				config.useKinect = true;
 			}
 #endif
 		}
@@ -292,7 +292,7 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 
 
 /**
- * Detects which MoCap system is active, e.g., Cortex, Oculus Rift, etc.
+ * Detects which MoCap system is active, e.g., Cortex, Kinect, etc.
  * As a fallback, a simulation system is used.
  *
  * @return  the MoCap system instance
@@ -338,23 +338,23 @@ MoCapSystem* detectMoCapSystem()
 	}
 #endif
 
-#ifdef USE_OCULUS_RIFT
-	if (pSystem == NULL && config.useOculusRift)
+#ifdef USE_KINECT
+	if (pSystem == NULL && config.useKinect)
 	{
-		// query Oculus Rift
-		LOG_INFO("Querying Oculus Rift");
+		// query Kinect sensors
+		LOG_INFO("Querying Kinect sensors");
 
-		MoCapOculusRift* pHMD = new MoCapOculusRift();
-		if (pHMD->initialise())
+		MoCapKinect* pKinect = new MoCapKinect();
+		if (pKinect->initialise())
 		{
-			LOG_INFO("Oculus Rift found");
-			pSystem = pHMD;
+			LOG_INFO("Kinect sensor found");
+			pSystem = pKinect;
 		}
 		else
 		{
-			LOG_WARNING("Oculus Rift not found");
-			pHMD->deinitialise();
-			delete pHMD;
+			LOG_WARNING("No Kinect sensors found");
+			pKinect->deinitialise();
+			delete pKinect;
 		}
 	}
 #endif
