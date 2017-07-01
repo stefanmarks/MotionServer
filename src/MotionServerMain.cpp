@@ -78,23 +78,23 @@ public:
 	MotionServerConfiguration() :
 		SystemConfiguration("Motion Server"),
 		printHelp(false),
-		strServerName("MotionServer"),
+		serverName("MotionServer"),
 		useMulticast(false),
-		strNatNetServerAddress("127.0.0.1"),
-		strNatNetServerMulticastAddress(""),
+		serverAddress("127.0.0.1"),
+		serverMulticastAddress(""),
 		// Portnumbers: Default is 1510/1511, but that seems to collide with Cortex.
 		// 1503 is taken by Windows messenger, 1512 is taken by WINS -> so let's use 1508, 1509
-		iNatNetCommandPort(1508),
-		iNatNetDataPort(1509),
-		iInteractionControllerPort(0),
+		commandPort(1508),
+		dataPort(1509),
+		interactionControllerPort(0),
 		writeData(false)
 	{
 		addOption("-h", "Print Help");
-		addParameter("-serverName", "<name>", "Name of MoCap Server (default: 'MotionServer')");
-		addParameter("-serverAddr", "<address>", "IP Address of MotionServer (default: 127.0.0.1)");
+		addParameter("-serverName", "<name>", "Name of MoCap Server (default: '" + serverName + "')");
+		addParameter("-serverAddr", "<address>", "IP Address of MotionServer (default: " + serverAddress + ")");
 		addParameter("-multicastAddr", "<address>", "IP Address of multicast MotionServer (default: Unicast)");
 		addParameter("-interactionControllerPort", "<number>", "COM port of XBee interaction controller (-1: scan)");
-		addOption("-writeFile", "Write MoCap Data into timestamped files");
+		addOption("-writeFile", "Write MoCap data into timestamped files");
 	}
 
 	virtual bool handleParameter(int idx, const std::string& value)
@@ -107,20 +107,20 @@ public:
 				break;
 
 			case 1: // Server name
-				strServerName = value;
+				serverName = value;
 				break;
 
 			case 2: // Server unicast address
-				strNatNetServerAddress = value;
+				serverAddress = value;
 				break;
 				
 			case 3: // Server multicast address
-				strNatNetServerMulticastAddress = value;
+				serverMulticastAddress = value;
 				useMulticast = true;
 				break;
 
 			case 4: // COM port number for XBee interaction controller
-				iInteractionControllerPort = atoi(value.c_str());
+				interactionControllerPort = atoi(value.c_str());
 				break;
 
 			default:
@@ -134,17 +134,17 @@ public:
 
 	bool        printHelp;
 
-	std::string strServerName;
+	std::string serverName;
 
 	bool        useMulticast;
-	std::string strNatNetServerAddress;
-	std::string strNatNetServerMulticastAddress;
-	int         iNatNetCommandPort;
-	int         iNatNetDataPort;
+	std::string serverAddress;
+	std::string serverMulticastAddress;
+	int         commandPort;
+	int         dataPort;
 
 	bool        writeData;
 
-	int         iInteractionControllerPort;
+	int         interactionControllerPort;
 };
 
 
@@ -434,23 +434,23 @@ InteractionSystem* detectInteractionSystem()
 {
 	InteractionSystem* pSystem = NULL;
 	
-	if (config.pMain->iInteractionControllerPort > 255)
+	if (config.pMain->interactionControllerPort > 255)
 	{
 		// invalid > don't use
-		config.pMain->iInteractionControllerPort = 0;
+		config.pMain->interactionControllerPort = 0;
 	}
 
-	int scanFrom = config.pMain->iInteractionControllerPort;
-	int scanTo   = config.pMain->iInteractionControllerPort + 1;
-	if (config.pMain->iInteractionControllerPort < 0)
+	int scanFrom = config.pMain->interactionControllerPort;
+	int scanTo   = config.pMain->interactionControllerPort + 1;
+	if (config.pMain->interactionControllerPort < 0)
 	{
 		scanFrom = 1;
 		scanTo = 256;
 		LOG_INFO("Scanning for Interaction System...");
 	}
-	else if (config.pMain->iInteractionControllerPort > 0)
+	else if (config.pMain->interactionControllerPort > 0)
 	{
-		LOG_INFO("Searching Interaction System on COM" << config.pMain->iInteractionControllerPort);
+		LOG_INFO("Searching Interaction System on COM" << config.pMain->interactionControllerPort);
 	}
 
 	// scan ports 
@@ -519,13 +519,13 @@ bool createServer()
 
 	if (iConnectionType == ConnectionType_Multicast)
 	{
-		pServer->SetMulticastAddress((char*) config.pMain->strNatNetServerMulticastAddress.c_str());
+		pServer->SetMulticastAddress((char*) config.pMain->serverMulticastAddress.c_str());
 	}
 
 	int retCode = pServer->Initialize(
-		(char*) config.pMain->strNatNetServerAddress.c_str(),
-		config.pMain->iNatNetCommandPort,
-		config.pMain->iNatNetDataPort);
+		(char*) config.pMain->serverAddress.c_str(),
+		config.pMain->commandPort,
+		config.pMain->dataPort);
 
 	if (retCode == ErrorCode_OK)
 	{
@@ -704,7 +704,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 			// build server response packet
 			pPacketOut->iMessage = NAT_PINGRESPONSE;
 			pPacketOut->nDataBytes = sizeof(pPacketOut->Data.Sender);
-			strcpy_s(pPacketOut->Data.Sender.szName, config.pMain->strServerName.c_str());
+			strcpy_s(pPacketOut->Data.Sender.szName, config.pMain->serverName.c_str());
 			for (int i = 0; i < 4; i++)
 			{ 
 				pPacketOut->Data.Sender.Version[i] = (unsigned char) arrServerVersion[i]; 
@@ -778,7 +778,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 			{
 				if ( config.pMain->useMulticast )
 				{ 
-					strcpy_s(pPacketOut->Data.szData, config.pMain->strNatNetServerMulticastAddress.c_str());
+					strcpy_s(pPacketOut->Data.szData, config.pMain->serverMulticastAddress.c_str());
 				}
 				else
 				{
@@ -869,7 +869,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 	{
 		do
 		{
-			LOG_INFO("Starting MotionServer '" << config.pMain->strServerName << "' v"
+			LOG_INFO("Starting MotionServer '" << config.pMain->serverName << "' v"
 				<< arrServerVersion[0] << "."
 				<< arrServerVersion[1] << "."
 				<< arrServerVersion[2] << "."
