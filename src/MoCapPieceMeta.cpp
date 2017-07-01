@@ -8,7 +8,9 @@
 
 #include <windows.h>
 #include <WinInet.h>
+#include <algorithm>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <locale>
 
@@ -110,14 +112,42 @@ bool MoCapPieceMeta::initialise()
 				int   maxFrameCount = 0;
 				float maxFPS = 0;
 				totalStreams += numStreams;
+				std::vector<std::string> groups;
+				std::vector<std::string> names;
 				for (int sIdx = 0; sIdx < numStreams; sIdx++)
 				{
 					sStream& stream = channel.streams[sIdx];
 					maxFrameCount = max(stream.frameCount, maxFrameCount);
 					maxFPS        = max(stream.fps, maxFPS);
+
+					// if not existing, add stream group to list of groups
+					if (!stream.group.empty() && std::find(groups.begin(), groups.end(), stream.group) == groups.end())
+					{
+						groups.push_back(stream.group);
+					}
+					// if not existing, add stream title to list of titles
+					if (std::find(names.begin(), names.end(), stream.title) == names.end())
+					{
+						names.push_back(stream.title);
+					}
 				}
+
 				LOG_INFO((cIdx + 1) << ": " << channel.uuid << " - " << channel.title << " - " <<
 					numStreams << " streams, " << maxFrameCount << " frames, " << maxFPS << " FPS");
+
+				LOG_INFO_START("  Groups: ");
+				for (auto i = groups.begin(); i != groups.end(); i++)
+				{
+					LOG_INFO_MID(((i == groups.begin()) ? "" : ", ") << *i);
+				}
+				LOG_INFO_END();
+
+				LOG_INFO_START("  Streams: ");
+				for (auto i = names.begin(); i != names.end(); i++)
+				{
+					LOG_INFO_MID(((i == names.begin()) ? "" : ", ") << *i);
+				}
+				LOG_INFO_END();
 
 				// determine maximum FPS
 				updateRate = max(updateRate, maxFPS);
@@ -125,14 +155,16 @@ bool MoCapPieceMeta::initialise()
 
 			// read frames
 			LOG_INFO("Loading Stream Data:");
+			int streamCount = 0;
 			for (int cIdx = 0; cIdx < numChannels; cIdx++)
 			{
-				LOG_INFO_START("- Channel " << (cIdx + 1));
+				LOG_INFO_START("- Channel " << (cIdx + 1) << "   0% ");
 				sChannel& channel = activePackage.channels[cIdx];
-				int   numStreams = channel.streams.size();
+				int numStreams = channel.streams.size();
 				for (int sIdx = 0; sIdx < numStreams; sIdx++)
 				{
-					LOG_INFO_MID(".");
+					streamCount++;
+					LOG_INFO_MID("\b\b\b\b\b" << std::setw(3) << std::right << (streamCount * 100 / totalStreams) << "% ");
 					sStream& stream = channel.streams[sIdx];
 					readStreamData(stream);
 				}
@@ -282,7 +314,7 @@ std::vector<MoCapPieceMeta::sPackage> MoCapPieceMeta::readPackages()
 		if (errorMsg.empty() && json.is_array())
 		{
 			const std::vector<json11::Json>& packageJson = json.array_items();
-			for (std::vector<json11::Json>::const_iterator i = packageJson.cbegin(); i != packageJson.cend(); ++i)
+			for (auto i = packageJson.cbegin(); i != packageJson.cend(); ++i)
 			{
 				sPackage package(*i);
 				packages.push_back(package);
