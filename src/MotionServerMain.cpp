@@ -5,9 +5,8 @@
  *
  */
 
-
 // Server version information
-const int arrServerVersion[4] = { 1, 9, 0, 0 };
+const int arrServerVersion[4] = { 1, 10, 0, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -32,6 +31,7 @@ const int arrServerVersion[4] = { 1, 9, 0, 0 };
 
 #include <algorithm>
 #include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <string>
@@ -45,6 +45,7 @@ const int arrServerVersion[4] = { 1, 9, 0, 0 };
 #include "NatNetTypes.h"
 #include "NatNetServer.h"
 #include "MoCapData.h"
+#include "SystemConfiguration.h"
 
 #include "Logging.h"
 #undef   LOG_CLASS
@@ -58,6 +59,10 @@ const int arrServerVersion[4] = { 1, 9, 0, 0 };
 #include "MoCapKinect.h"
 #endif
 
+#ifdef USE_PIECEMETA
+#include "MoCapPieceMeta.h"
+#endif
+
 #include "MoCapSimulator.h"
 #include "MoCapFile.h"
 #include "InteractionSystem.h"
@@ -67,7 +72,7 @@ const int arrServerVersion[4] = { 1, 9, 0, 0 };
 // Configuration variables
 //
 
-struct sConfiguration 
+struct sConfiguration
 {
 	std::string strServerName;
 
@@ -80,13 +85,20 @@ struct sConfiguration
 	bool        writeData;
 	std::string dataFilename;
 
-	bool        useCortex;
-	std::string strRemoteCortexAddress;
-	std::string strLocalCortexAddress;
-
 	int         iInteractionControllerPort;
 
+#ifdef USE_CORTEX
+	MoCapCortexConfiguration* pCortex;
+#endif
+	
 	bool        useKinect;
+
+#ifdef USE_PIECEMETA
+	MoCapPieceMetaConfiguration* pPieceMeta;
+#endif
+
+	std::vector<SystemConfiguration*> systemConfigurations;
+
 
 	sConfiguration()
 	{
@@ -109,11 +121,17 @@ struct sConfiguration
 		writeData    = false;
 		dataFilename = "";
 
-		useCortex              = false;
-		strRemoteCortexAddress = "127.0.0.1";
-		strLocalCortexAddress  = strRemoteCortexAddress;
+#ifdef USE_CORTEX
+		pCortex = new MoCapCortexConfiguration();
+		systemConfigurations.push_back(pCortex);
+#endif
 
 		useKinect = false;
+
+#ifdef USE_PIECEMETA
+		pPieceMeta = new MoCapPieceMetaConfiguration();
+		systemConfigurations.push_back(pPieceMeta);
+#endif
 	}
 
 } config;
@@ -176,21 +194,39 @@ void mocapTimerThread();
 
 void printUsage()
 {
+	const int w = 40;
 	std::cout << "Command line arguments:" << std::endl
-		<< "-h                                    Print Help" << std::endl
-		<< "-serverName <name>                    Name of MoCap Server (default: 'MotionServer')" << std::endl
-		<< "-serverAddr <address>                 IP Address of MotionServer (default: 127.0.0.1)" << std::endl
-		<< "-multicastAddr <address>              IP Address of multicast MotionServer (default: Unicast)" << std::endl
+		<< "Generic options:" << std::endl
+		<< std::left << std::setw(w) << " -h"                                  << "Print Help" << std::endl
+		<< std::left << std::setw(w) << " -serverName <name>"                  << "Name of MoCap Server (default: 'MotionServer')" << std::endl
+		<< std::left << std::setw(w) << " -serverAddr <address>"               << "IP Address of MotionServer (default: 127.0.0.1)" << std::endl
+		<< std::left << std::setw(w) << " -multicastAddr <address>"            << "IP Address of multicast MotionServer (default: Unicast)" << std::endl
+		<< std::left << std::setw(w) << " -interactionControllerPort <number>" << "COM port of XBee interaction controller (-1: scan)" << std::endl
+		<< std::left << std::setw(w) << " -readFile <filename"                 << "Read and loop MoCap Data from a file" << std::endl
+		<< std::left << std::setw(w) << " -writeFile"                          << "Write MoCap Data into timestamped files" << std::endl
+		;
+
+	// go through all possible mocap systems
+	for (std::vector<SystemConfiguration*>::const_iterator sys = config.systemConfigurations.cbegin();
+		sys != config.systemConfigurations.cend();
+		sys++)
+	{
+		std::cout << (*sys)->getSystemName() << " options:" << std::endl;
+		// list their comand line options
+		for (std::vector<SystemConfiguration::sParameter>::const_iterator param = (*sys)->getParameters().cbegin();
+			param != (*sys)->getParameters().cend();
+			param++
+			)
+		{
+			std::string p = " " + (*param).name + " " + (*param).parameter;
+			std::cout << std::left << std::setw(w) << p << (*param).description << std::endl;
+		}
+	}
+
+	std::cout
 #ifdef USE_KINECT
 		<< "-kinect                               Kinect sensor detection" << std::endl
 #endif
-#ifdef USE_CORTEX
-		<< "-cortexRemoteAddr <address>           IP Address of remote interface to connect to Cortex" << std::endl
-		<< "-cortexLocalAddr <address>            IP Address of local interface to connect to Cortex" << std::endl
-#endif
-		<< "-interactionControllerPort <number>   COM port of XBee interaction controller (-1: scan)" << std::endl
-		<< "-readFile <filename>                  Read and loop MoCap Data from a file" << std::endl
-		<< "-writeFile                            Write MoCap Data into timestamped files" << std::endl
 		;
 }
 
@@ -229,6 +265,16 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 			else if (strArg == "-writefile")
 			{
 				config.writeData = true;
+			}
+			else
+			{
+				// run option through systems
+				for (std::vector<SystemConfiguration*>::const_iterator sys = config.systemConfigurations.cbegin();
+					sys != config.systemConfigurations.cend();
+					sys++)
+				{
+					(*sys)->processOption(strArg);
+				}
 			}
 #ifdef USE_KINECT
 			else if (strArg == "-kinect")
@@ -270,20 +316,16 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
 				// file to read
 				config.dataFilename = strParam1;
 			}
-#ifdef USE_CORTEX
-			else if (strArg == "-cortexremoteaddr")
+			else
 			{
-				// Cortex server address
-				config.strRemoteCortexAddress = strParam1;
-				config.useCortex = true;
+				// run option through systems
+				for (std::vector<SystemConfiguration*>::const_iterator sys = config.systemConfigurations.cbegin();
+					sys != config.systemConfigurations.cend();
+					sys++)
+				{
+					(*sys)->processParameter(strArg, strParam1);
+				}
 			}
-			else if (strArg == "-cortexlocaladdr")
-			{
-				// Cortex local address
-				config.strLocalCortexAddress = strParam1;
-				config.useCortex = true;
-			}
-#endif
 		}
 
 		argIdx++; // next argument
@@ -319,11 +361,11 @@ MoCapSystem* detectMoCapSystem()
 	}
 
 #ifdef USE_CORTEX
-	if (pSystem == NULL && config.useCortex)
+	if (pSystem == NULL && config.pCortex->useCortex)
 	{
 		// query Cortex
 		LOG_INFO("Querying Cortex Server");
-		MoCapCortex* pCortex = new MoCapCortex(config.strRemoteCortexAddress, config.strLocalCortexAddress);
+		MoCapCortex* pCortex = new MoCapCortex(*config.pCortex);
 		if ( pCortex->initialise() )
 		{
 			LOG_INFO("Cortex Server found");
@@ -355,6 +397,24 @@ MoCapSystem* detectMoCapSystem()
 			LOG_WARNING("No Kinect sensors found");
 			pKinect->deinitialise();
 			delete pKinect;
+		}
+	}
+#endif
+
+#ifdef USE_PIECEMETA
+	if (pSystem == NULL && config.pPieceMeta->usePieceMeta)
+	{
+		MoCapPieceMeta* pPieceMeta = new MoCapPieceMeta(*config.pPieceMeta);
+		if (pPieceMeta->initialise())
+		{
+			LOG_INFO("PieceMeta database contacted");
+			pSystem = pPieceMeta;
+		}
+		else
+		{
+			LOG_WARNING("Could not connect to PieceMeta database");
+			pPieceMeta->deinitialise();
+			delete pPieceMeta;
 		}
 	}
 #endif

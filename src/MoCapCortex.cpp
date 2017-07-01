@@ -16,6 +16,41 @@
 #define MAX_UNKNOWN_MARKERS 256 // maximum number of unknown markers
 
 
+
+MoCapCortexConfiguration::MoCapCortexConfiguration() :
+	SystemConfiguration("Cortex"),
+	useCortex(false),
+	remoteCortexAddress(""),
+	localCortexAddress("")
+{
+	addParameter("-cortexRemoteAddr", "<address>", "IP Address of remote interface to connect to Cortex");
+	addParameter("-cortexLocalAddr", "<address>",  "IP Address of local interface to connect to Cortex");
+}
+
+
+bool MoCapCortexConfiguration::handleParameter(int idx, const std::string& value)
+{
+	bool success = true;
+	switch (idx)
+	{
+	case 0:
+		remoteCortexAddress = value;
+		useCortex = true;
+		break;
+
+	case 1:
+		localCortexAddress = value;
+
+	default:
+		success = false;
+		break;
+	}
+	return success;
+}
+
+
+
+
 /**
  * Handler for messages from the Cortex server.
  */
@@ -47,7 +82,8 @@ void __cdecl callbackMoCapCortexDataHandler(sFrameOfData* pFrameOfData)
 }
 
 
-MoCapCortex::MoCapCortex(const std::string &strCortexAddress, const std::string &strLocalAddress) :
+MoCapCortex::MoCapCortex(MoCapCortexConfiguration configuration) :
+	configuration(configuration),
 	initialised(false),
 	isPlaying(true),
 	pCortexInfo(NULL),
@@ -55,8 +91,7 @@ MoCapCortex::MoCapCortex(const std::string &strCortexAddress, const std::string 
 	updateRate(100.0f),
 	handleUnknownMarkers(false)
 {
-	this->strCortexAddress = strCortexAddress;
-	this->strLocalAddress  = strLocalAddress;
+	// nothing else to do
 }
 
 
@@ -72,16 +107,16 @@ bool MoCapCortex::initialise()
 			<< (int)cortexSDK_Version[2] << "."
 			<< (int)cortexSDK_Version[3]);
 
-		LOG_INFO("Connecting to Cortex server at address " << strCortexAddress
-			<< (strLocalAddress.empty() ? "" : " from address ") << strLocalAddress);
+		LOG_INFO("Connecting to Cortex server at address " << configuration.remoteCortexAddress
+			<< (configuration.localCortexAddress.empty() ? "" : " from address ") << configuration.localCortexAddress);
 
 		// set up callback handler for logging and streaming
 		Cortex_SetErrorMsgHandlerFunc(callbackMoCapCortexMessageHandler);
 		Cortex_SetDataHandlerFunc(callbackMoCapCortexDataHandler);
 
 		if (Cortex_Initialize(
-				(char*) (strLocalAddress.empty() ? NULL : strLocalAddress.c_str()), 
-				(char*) strCortexAddress.c_str()
+				(char*) (configuration.localCortexAddress.empty() ? NULL : configuration.localCortexAddress.c_str()),
+				(char*)  configuration.remoteCortexAddress.c_str()
 			) == RC_Okay)
 		{
 			pCortexInfo = new sHostInfo;
