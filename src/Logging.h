@@ -11,6 +11,9 @@
 #define LOG_WARNING(x) { std::stringstream strm; strm << "W (" LOG_CLASS ") : " << x << std::endl; std::cerr << strm.str(); }
 #define LOG_ERROR(x)   { std::stringstream strm; strm << "E (" LOG_CLASS ") : " << x << std::endl; std::cerr << strm.str(); }
 
+#define LOG_INFO_START(x) { std::cout << "I (" LOG_CLASS ") : " << x << std::flush; } 
+#define LOG_INFO_MID(x)   { std::cout << x << std::flush; } 
+#define LOG_INFO_END()    { std::cout << std::endl; } 
 
 #include "NatNetTypes.h"
 
