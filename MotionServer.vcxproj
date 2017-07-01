@@ -94,11 +94,13 @@
     <ClInclude Include="include\Cortex.h" />
     <ClInclude Include="include\NatNetServer.h" />
     <ClInclude Include="include\NatNetTypes.h" />
+    <ClInclude Include="src\json11.hpp" />
     <ClInclude Include="src\MoCapFile.h" />
     <ClInclude Include="src\Config.h" />
     <ClInclude Include="src\InteractionSystem.h" />
     <ClInclude Include="src\MoCapCortex.h" />
     <ClInclude Include="src\MoCapData.h" />
+    <ClInclude Include="src\MoCapPieceMeta.h" />
     <ClInclude Include="src\MoCapSimulator.h" />
     <ClInclude Include="src\MoCapSystem.h" />
     <ClInclude Include="src\SystemConfiguration.h" />
@@ -110,11 +112,13 @@
     <ClInclude Include="src\XBeeData.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\json11.cpp" />
     <ClCompile Include="src\MoCapFile.cpp" />
     <ClCompile Include="src\InteractionSystem.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\MoCapCortex.cpp" />
     <ClCompile Include="src\MoCapData.cpp" />
+    <ClCompile Include="src\MoCapPieceMeta.cpp" />
     <ClCompile Include="src\MoCapSimulator.cpp" />
     <ClCompile Include="src\SystemConfiguration.cpp" />
     <ClCompile Include="src\MotionServerMain.cpp" />
