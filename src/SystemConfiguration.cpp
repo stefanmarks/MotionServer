@@ -33,6 +33,14 @@ const std::vector<SystemConfiguration::sParameter>& SystemConfiguration::getPara
 }
 
 
+void SystemConfiguration::addOption(
+	const std::string& name,
+	const std::string& description)
+{
+	addParameter(name, "", description);
+}
+
+
 void SystemConfiguration::addParameter(
 	const std::string& name,
 	const std::string& parameter,

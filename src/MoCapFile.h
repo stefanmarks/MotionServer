@@ -5,6 +5,7 @@
 #pragma once
 
 #include "MoCapSystem.h"
+#include "SystemConfiguration.h"
 #include "VectorMath.h"
 
 #include <fstream>
@@ -132,6 +133,22 @@ private:
 
 
 /**
+ * Class for the file reader MoCap system configuration.
+ */
+class MoCapFileReaderConfiguration : public SystemConfiguration
+{
+public:
+	MoCapFileReaderConfiguration();
+
+	virtual bool handleParameter(int idx, const std::string& value);
+
+public:
+
+	std::string filename;
+};
+
+
+/**
  * Class for reading MoCap data from a text file and acting like a live MoCap system.
  */
 class MoCapFileReader : public MoCapSystem
@@ -141,9 +158,9 @@ public:
 	/**
 	 * Creates a MoCap data file reader.
 	 *
-	 * @param strFilename  the filename of the MoCap data file to read
+	 * @param configuration  the configuration for the file reader
 	 */
-	MoCapFileReader(const std::string& strFilename);
+	MoCapFileReader(MoCapFileReaderConfiguration configuration);
 
 	/**
 	 * Destroys the MoCap data file reader.
@@ -206,20 +223,21 @@ private:
 
 private:
 
-	std::string        strFilename;
-	int                fileVersion;
-	float              updateRate;
+	MoCapFileReaderConfiguration configuration;
 
-	std::ifstream      input;
-	char*              pBuf;
-	int                bufSize;
-	const char*        pRead;
-	char               czStrBuf[256];
+	int            fileVersion;
+	float          updateRate;
 
-	std::streampos     posDescriptions, posFrames;
-	bool               fileOK, headerOK;
+	std::ifstream  input;
+	char*          pBuf;
+	int            bufSize;
+	const char*    pRead;
+	char           czStrBuf[256];
 
-	bool               isPlaying, isLooping;
-	float              playbackSpeed;
+	std::streampos posDescriptions, posFrames;
+	bool           fileOK, headerOK;
+
+	bool           isPlaying, isLooping;
+	float          playbackSpeed;
 };
 
