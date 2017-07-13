@@ -126,7 +126,7 @@ bool MoCapKinect::initialise()
 
 		if (SUCCEEDED(result))
 		{
-			LOG_INFO("Kinect sensor initialized" << (configuration.seatedMode ? "(seated mode)" : ""));
+			LOG_INFO("Kinect sensor initialized" << (configuration.seatedMode ? " (seated mode)" : ""));
 			initialised = true;
 		}
 		else

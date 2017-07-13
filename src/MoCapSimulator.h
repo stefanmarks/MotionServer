@@ -30,7 +30,7 @@ public:
 
 private:
 	bool                    initialised;
-	bool                    isPlaying;
+	bool                    running;
 	int                     iFrame;
 	float                   fTime;
 	std::vector<Vector3D>   arrPos;

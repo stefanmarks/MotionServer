@@ -130,7 +130,7 @@ private:
 	MoCapPieceMetaConfiguration configuration;
 
 	bool  initialised;
-	bool  isPlaying;
+	bool  running;
 	float updateRate;
 
 	sPackage activePackage;

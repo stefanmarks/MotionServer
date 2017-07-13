@@ -84,14 +84,14 @@ private:
 
 	MoCapCortexConfiguration configuration;
 
-	bool         initialised;
-	bool         isPlaying;
+	bool       initialised;
+	bool       running;
 	
-	sHostInfo*   pCortexInfo;
+	sHostInfo* pCortexInfo;
 
-	float        unitScaleFactor;
-	float        updateRate;
-	bool         handleUnknownMarkers;
+	float      unitScaleFactor;
+	float      updateRate;
+	bool       handleUnknownMarkers;
 
 };
 

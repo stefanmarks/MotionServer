@@ -237,7 +237,7 @@ private:
 	std::streampos posDescriptions, posFrames;
 	bool           fileOK, headerOK;
 
-	bool           isPlaying, isLooping;
+	bool           running, looping;
 	float          playbackSpeed;
 };
 

@@ -85,7 +85,7 @@ void __cdecl callbackMoCapCortexDataHandler(sFrameOfData* pFrameOfData)
 MoCapCortex::MoCapCortex(MoCapCortexConfiguration configuration) :
 	configuration(configuration),
 	initialised(false),
-	isPlaying(true),
+	running(true),
 	pCortexInfo(NULL),
 	unitScaleFactor(1.0f),
 	updateRate(100.0f),
@@ -195,7 +195,7 @@ float MoCapCortex::getUpdateRate()
 
 bool MoCapCortex::isRunning()
 {
-	return isPlaying;
+	return running;
 }
 
 
@@ -206,7 +206,7 @@ void MoCapCortex::setRunning(bool running)
 	char* czCommand = running ? "LiveMode" : "Pause";
 	if (Cortex_Request(czCommand, &pResponse, &iResponseSize) == RC_Okay)
 	{
-		isPlaying = running;
+		this->running = running;
 	}
 }
 

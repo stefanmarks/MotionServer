@@ -623,8 +623,8 @@ MoCapFileReader::MoCapFileReader(MoCapFileReaderConfiguration configuration) :
 	updateRate(0),
 	pBuf(NULL), pRead(NULL),
 	bufSize(65536), // should be a good start for a buffer size...
-	isPlaying(true),
-	isLooping(true),
+	running(true),
+	looping(true),
 	playbackSpeed(1.0f)
 {
 	pBuf  = new char[bufSize];
@@ -670,13 +670,13 @@ float MoCapFileReader::getUpdateRate()
 
 bool MoCapFileReader::isRunning()
 {
-	return isPlaying;
+	return running;
 }
 
 
 void MoCapFileReader::setRunning(bool running)
 {
-	isPlaying = running;
+	this->running = running;
 }
 
 
@@ -809,7 +809,7 @@ bool MoCapFileReader::getFrameData(MoCapData& refData)
 	}
 	else if (!input.good())
 	{
-		if (isLooping)
+		if (looping)
 		{
 			// end of file reached > clear failbit and loop to beginning
 			input.clear();
@@ -820,13 +820,13 @@ bool MoCapFileReader::getFrameData(MoCapData& refData)
 		else
 		{
 			// not looping, pause here
-			isPlaying = false;
+			running = false;
 			LOG_INFO("End of data reached > Stopping");
 		}
 	}
 	else
 	{
-		if (isPlaying)
+		if (running)
 		{
 			nextLine();
 		}

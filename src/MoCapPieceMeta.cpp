@@ -58,7 +58,7 @@ bool MoCapPieceMetaConfiguration::handleParameter(int idx, const std::string& va
 MoCapPieceMeta::MoCapPieceMeta(MoCapPieceMetaConfiguration configuration) :
 	configuration(configuration),
 	initialised(false),
-	isPlaying(true),
+	running(true),
 	updateRate(100.0f)
 {
 	
@@ -192,13 +192,13 @@ float MoCapPieceMeta::getUpdateRate()
 
 bool MoCapPieceMeta::isRunning()
 {
-	return isPlaying;
+	return running;
 }
 
 
 void MoCapPieceMeta::setRunning(bool running)
 {
-	isPlaying = running;
+	this->running = running;
 }
 
 

@@ -48,7 +48,7 @@ const int SKELETON_COUNT   = 0;
 
 MoCapSimulator::MoCapSimulator() :
 	initialised(false),
-	isPlaying(true)
+	running(true)
 {
 	// nothing else to do
 }
@@ -92,18 +92,18 @@ float MoCapSimulator::getUpdateRate()
 
 bool MoCapSimulator::isRunning()
 {
-	return isPlaying;
+	return running;
 }
 
 
 void MoCapSimulator::setRunning(bool running)
 {
-	isPlaying = running;
+	this->running = running;
 }
 
 bool MoCapSimulator::update()
 {
-	if (isPlaying)
+	if (running)
 	{
 		iFrame += 1;
 		fTime += (1.0f / _frameRate);
