@@ -83,7 +83,8 @@ bool MoCapKinectConfiguration::handleParameter(int idx, const std::string& value
 MoCapKinect::MoCapKinect(MoCapKinectConfiguration configuration) :
 	configuration(configuration),
 	initialised(false),
-	running(true)
+	running(true),
+	pNuiSensor(NULL)
 {
 	// nothing else to do
 }
@@ -234,12 +235,13 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 		// go through all bones
 		for (int mIdx = 0; mIdx < msData.nMarkers; mIdx++)
 		{
-			const Vector4& point    = skeleton.SkeletonPositions[SKELETON_DATA[mIdx].index];
-			MarkerData&    msMarker = msData.Markers[mIdx];
+			int            skeletonIdx = SKELETON_DATA[mIdx].index;
+			const Vector4& point       = skeleton.SkeletonPositions[skeletonIdx];
+			MarkerData&    msMarker    = msData.Markers[mIdx];
 
 			//LOG_INFO_MID(skeleton.eSkeletonPositionTrackingState[mIdx]);
 
-			switch (skeleton.eSkeletonPositionTrackingState[mIdx])
+			switch (skeleton.eSkeletonPositionTrackingState[skeletonIdx])
 			{
 				case NUI_SKELETON_POSITION_INFERRED:
 					//fallthrough
@@ -343,6 +345,12 @@ bool MoCapKinect::deinitialise()
 
 void MoCapKinect::cleanup()
 {
+	if (pNuiSensor != NULL)
+	{
+		pNuiSensor->Release();
+		pNuiSensor = NULL;
+	}
+
 	NuiShutdown();
 }
 
