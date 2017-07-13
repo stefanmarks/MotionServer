@@ -33,17 +33,17 @@ bool MoCapCortexConfiguration::handleParameter(int idx, const std::string& value
 	bool success = true;
 	switch (idx)
 	{
-	case 0:
-		remoteCortexAddress = value;
-		useCortex = true;
-		break;
+		case 0:
+			remoteCortexAddress = value;
+			useCortex = true;
+			break;
 
-	case 1:
-		localCortexAddress = value;
+		case 1:
+			localCortexAddress = value;
 
-	default:
-		success = false;
-		break;
+		default:
+			success = false;
+			break;
 	}
 	return success;
 }

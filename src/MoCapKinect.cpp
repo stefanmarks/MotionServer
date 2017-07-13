@@ -63,17 +63,17 @@ bool MoCapKinectConfiguration::handleParameter(int idx, const std::string& value
 	bool success = true;
 	switch (idx)
 	{
-	case 0:
-		useKinect = true;
-		break;
+		case 0:
+			useKinect = true;
+			break;
 
-	case 1:
-		seatedMode = true;
-		break;
+		case 1:
+			seatedMode = true;
+			break;
 
-	default:
-		success = false;
-		break;
+		default:
+			success = false;
+			break;
 	}
 	return success;
 }

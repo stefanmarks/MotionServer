@@ -606,13 +606,13 @@ bool MoCapFileReaderConfiguration::handleParameter(int idx, const std::string& v
 	bool success = true;
 	switch (idx)
 	{
-	case 0:
-		filename = value;
-		break;
+		case 0:
+			filename = value;
+			break;
 
-	default:
-		success = false;
-		break;
+		default:
+			success = false;
+			break;
 	}
 	return success;
 }
