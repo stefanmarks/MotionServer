@@ -6,7 +6,7 @@
  */
 
 // Server version information
-const int arrServerVersion[4] = { 1, 10, 0, 0 };
+const int arrServerVersion[4] = { 1, 10, 1, 0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -157,7 +157,9 @@ struct sConfiguration
 	MoCapCortexConfiguration*     pCortex;
 #endif
 	
-	bool        useKinect;
+#ifdef USE_KINECT
+	MoCapKinectConfiguration*     pKinect;
+#endif
 
 #ifdef USE_PIECEMETA
 	MoCapPieceMetaConfiguration*  pPieceMeta;
@@ -179,7 +181,10 @@ struct sConfiguration
 		systemConfigurations.push_back(pCortex);
 #endif
 
-		useKinect = false;
+#ifdef USE_KINECT
+		pKinect = new MoCapKinectConfiguration();
+		systemConfigurations.push_back(pKinect);
+#endif
 
 #ifdef USE_PIECEMETA
 		pPieceMeta = new MoCapPieceMetaConfiguration();
@@ -367,12 +372,12 @@ MoCapSystem* detectMoCapSystem()
 #endif
 
 #ifdef USE_KINECT
-	if (pSystem == NULL && config.useKinect)
+	if (pSystem == NULL && config.pKinect->useKinect)
 	{
 		// query Kinect sensors
 		LOG_INFO("Querying Kinect sensors");
 
-		MoCapKinect* pKinect = new MoCapKinect();
+		MoCapKinect* pKinect = new MoCapKinect(*config.pKinect);
 		if (pKinect->initialise())
 		{
 			LOG_INFO("Kinect sensor found");

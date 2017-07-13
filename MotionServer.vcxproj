@@ -100,6 +100,7 @@
     <ClInclude Include="src\InteractionSystem.h" />
     <ClInclude Include="src\MoCapCortex.h" />
     <ClInclude Include="src\MoCapData.h" />
+    <ClInclude Include="src\MocapKinect.h" />
     <ClInclude Include="src\MoCapPieceMeta.h" />
     <ClInclude Include="src\MoCapSimulator.h" />
     <ClInclude Include="src\MoCapSystem.h" />
@@ -118,6 +119,7 @@
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\MoCapCortex.cpp" />
     <ClCompile Include="src\MoCapData.cpp" />
+    <ClCompile Include="src\MoCapKinect.cpp" />
     <ClCompile Include="src\MoCapPieceMeta.cpp" />
     <ClCompile Include="src\MoCapSimulator.cpp" />
     <ClCompile Include="src\SystemConfiguration.cpp" />

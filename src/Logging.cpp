@@ -130,7 +130,8 @@ void printFrameOfData(std::ostream& refOutput, sFrameOfMocapData& refData)
 {
 	refOutput << "Frame Data ("
 		<< "Frame# " << refData.iFrame 
-		<< ", Latency: " << (((int)(refData.fLatency * 1000)) / 1000.0f) << "s" 
+		<< ", Timestamp: " << (((int)(refData.fTimestamp * 1000)) / 1000.0f) << "s"
+		<< ", Latency: " << (((int)(refData.fLatency * 1000)) / 1000.0f) << "s"
 		<< ")" << std::endl;
 
 	// print markersets and marker positions

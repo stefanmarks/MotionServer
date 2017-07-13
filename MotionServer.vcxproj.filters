@@ -68,6 +68,9 @@
     <ClInclude Include="src\MoCapPieceMeta.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\MocapKinect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -110,6 +113,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MoCapPieceMeta.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MoCapKinect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
