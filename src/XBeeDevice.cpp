@@ -11,9 +11,9 @@
 #undef  LOG_DATA // define to get memory dumps of the received packets
 
 
-///////////////////////////////////////////////////////////////////////////////
-// XBeeDevice
-//
+/******************************************************************************
+ * XBeeDevice class
+ */
 
 XBeeDevice::XBeeDevice() :
 	m_strName(""),
@@ -63,9 +63,9 @@ uint16_t XBeeDevice::getNetworkAddress() const
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-// XBeeCoordinator
-//
+/******************************************************************************
+ * XBeeCoordinator class
+ */
 
 XBeeCoordinator::XBeeCoordinator(SerialPort& refPort) :
 	XBeeDevice(),
@@ -375,9 +375,10 @@ bool XBeeCoordinator::receivePacket()
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-// XBeeRemoteDevice
-//
+
+/******************************************************************************
+ * XBeeRemoteDevice class
+ */
 
 XBeeRemoteDevice::XBeeRemoteDevice(XBeeCoordinator& refCoordinator, const XBeeReadBuffer& refBuffer) :
 	XBeeDevice(),

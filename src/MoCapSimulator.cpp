@@ -46,6 +46,10 @@ const int RIGID_BODY_COUNT = sizeof(RIGID_BODY_PARAMS) / sizeof(RIGID_BODY_PARAM
 const int SKELETON_COUNT   = 0;
 
 
+/******************************************************************************
+ * MoCapSimulator class
+ */
+
 MoCapSimulator::MoCapSimulator() :
 	initialised(false),
 	running(true)

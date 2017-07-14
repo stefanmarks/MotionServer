@@ -6,11 +6,12 @@
  */
 
 // Server version information
-const int arrServerVersion[4] = { 1, 10, 1, 0 };
+const int arrServerVersion[4] = { 1, 10, 2, 0 };
 
 
-///////////////////////////////////////////////////////////////////////////////
-// includes
+/******************************************************************************
+ * Includes
+ */
 
 #include "Config.h"             // configuration definitions
 
@@ -68,9 +69,9 @@ const int arrServerVersion[4] = { 1, 10, 1, 0 };
 #include "InteractionSystem.h"
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Configuration classes and variables
-//
+/******************************************************************************
+ * Configuration classes and variables
+ */
 
 class MotionServerConfiguration : public SystemConfiguration
 {
@@ -195,9 +196,9 @@ struct sConfiguration
 } config;
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Operational variables
-//
+/******************************************************************************
+ * Operational variables
+ */
 
 // Server variables
 NatNetServer* pServer          = NULL;
@@ -237,9 +238,9 @@ void signalNewFrame();
 bool destroyServer();
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Callback/Thread prototypes
-//
+/******************************************************************************
+ * Callback/Thread prototypes
+ */
 
 void __cdecl callbackNatNetServerMessageHandler(int iMessageType, char* czMessage);
 int  __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPacketOut, void* pUserData);
@@ -247,8 +248,9 @@ int  __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPa
 void mocapTimerThread();
 
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * Main functions
+ */
 
 void printUsage()
 {

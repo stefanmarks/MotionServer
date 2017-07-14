@@ -2,6 +2,9 @@
 #include "XBeePacket.h"
 
 
+/******************************************************************************
+ * XBeeReadBuffer class
+ */
 
 uint8_t* XBeeReadBuffer::prepareBuffer(uint16_t length)
 {
@@ -164,6 +167,9 @@ const void* XBeeReadBuffer::data() const
 
 
 
+/******************************************************************************
+ * XBeeWriteBuffer class
+ */
 
 void XBeeWriteBuffer::clear()
 {

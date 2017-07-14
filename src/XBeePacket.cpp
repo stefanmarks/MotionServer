@@ -2,7 +2,10 @@
 #include "XBeeDevice.h"
 
 
-///////////////////////////////////////////////////////////////////////////////
+
+/******************************************************************************
+ * XBeePacket class
+ */
 
 XBeePacket::XBeePacket(uint8_t frameTypeID) :
 	m_frameTypeID(frameTypeID)
@@ -18,7 +21,9 @@ uint8_t XBeePacket::getFrameTypeID() const
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * XBeePacket_Send class
+ */
 
 XBeePacket_Send::XBeePacket_Send(uint8_t frameTypeID) :
 	XBeePacket(frameTypeID),
@@ -50,7 +55,9 @@ void XBeePacket_Send::marshal(XBeeWriteBuffer& refBuffer)
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * XBeePacket_Receive class
+ */
 
 XBeePacket_Receive::XBeePacket_Receive(uint8_t frameTypeID) :
 	XBeePacket(frameTypeID),
@@ -74,7 +81,9 @@ uint8_t XBeePacket_Receive::getFrameID() const
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * XBeePacket_AT_Command class
+ */
 
 XBeePacket_AT_Command::XBeePacket_AT_Command() :
 	XBeePacket_Send(XBeePacket_AT_Command::FRAME_TYPE_ID),
@@ -107,7 +116,9 @@ void XBeePacket_AT_Command::marshal(XBeeWriteBuffer& refBuffer)
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * XBeePacket_AT_CommandResponse class
+ */
 
 XBeePacket_AT_CommandResponse::XBeePacket_AT_CommandResponse() :
 	XBeePacket_Receive(XBeePacket_AT_CommandResponse::FRAME_TYPE_ID),
@@ -179,7 +190,9 @@ const XBeeReadBuffer& XBeePacket_AT_CommandResponse::getRawData() const
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * XBeePacket_RemoteAT_Command class
+ */
 
 XBeePacket_RemoteAT_Command::XBeePacket_RemoteAT_Command(const std::string& strCommand) :
 	XBeePacket_AT_Command(strCommand),
@@ -214,7 +227,9 @@ void XBeePacket_RemoteAT_Command::marshal(XBeeWriteBuffer& refBuffer)
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * XBeePacket_RemoteAT_CommandResponse class
+ */
 
 XBeePacket_RemoteAT_CommandResponse::XBeePacket_RemoteAT_CommandResponse() :
 	XBeePacket_AT_CommandResponse()
@@ -253,7 +268,9 @@ uint16_t XBeePacket_RemoteAT_CommandResponse::getNetworkAddress() const
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * XBeePacket_IO_DataSample class
+ */
 
 XBeePacket_IO_DataSample::XBeePacket_IO_DataSample() :
 	XBeePacket_Receive(XBeePacket_IO_DataSample::FRAME_TYPE_ID),

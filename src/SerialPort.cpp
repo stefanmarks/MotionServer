@@ -8,6 +8,10 @@
 #define  LOG_CLASS "SerialPort"
 
 
+/******************************************************************************
+ * SerialPort class
+ */
+
 SerialPort::SerialPort(int portNumber) :
 	m_iPortNumber(portNumber),
 	m_hPort(0)

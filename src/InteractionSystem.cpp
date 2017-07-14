@@ -5,7 +5,9 @@
 #define  LOG_CLASS "InteractionSystem"
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * InteractionDevice class
+ */
 
 InteractionDevice::InteractionDevice(const std::string& name) :
 	m_deviceName(name)
@@ -33,7 +35,9 @@ const std::vector<Channel>& InteractionDevice::getChannels() const
 
 
 
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * InteractionDevice_Joystick class
+ */
 
 InteractionDevice_Joystick::InteractionDevice_Joystick(const std::string& name, XBeeRemoteDevice& refDevice) :
 	InteractionDevice(name),
@@ -108,6 +112,9 @@ bool InteractionDevice_Joystick::update(const XBeePacket_Receive& refPacket)
 
 
 
+/******************************************************************************
+ * InteractionSystem class
+ */
 
 InteractionSystem::InteractionSystem(std::unique_ptr<SerialPort>& pPort)
 {

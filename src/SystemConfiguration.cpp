@@ -4,6 +4,10 @@
 #include <algorithm>
 
 
+/******************************************************************************
+ * SystemConfiguration::sParameter class
+ */
+
 SystemConfiguration::sParameter::sParameter(
 	const std::string& name, const std::string& parameter, const std::string& description) :
 	name(name), parameter(parameter), description(description) 
@@ -12,6 +16,10 @@ SystemConfiguration::sParameter::sParameter(
 	std::transform(name.begin(), name.end(), std::back_inserter(nameLower), ::tolower);
 }
 
+
+/******************************************************************************
+ * SystemConfiguration class
+ */
 
 SystemConfiguration::SystemConfiguration(const std::string& systemName) :
 	systemName(systemName),

@@ -17,6 +17,10 @@
 
 
 
+/******************************************************************************
+ * MoCapCortexConfiguration class
+ */
+
 MoCapCortexConfiguration::MoCapCortexConfiguration() :
 	SystemConfiguration("Cortex"),
 	useCortex(false),
@@ -50,6 +54,9 @@ bool MoCapCortexConfiguration::handleParameter(int idx, const std::string& value
 
 
 
+/******************************************************************************
+ * Helper functions
+ */
 
 /**
  * Handler for messages from the Cortex server.
@@ -81,6 +88,10 @@ void __cdecl callbackMoCapCortexDataHandler(sFrameOfData* pFrameOfData)
 	signalNewFrame();
 }
 
+
+/******************************************************************************
+ * MoCapCortex class
+ */
 
 MoCapCortex::MoCapCortex(MoCapCortexConfiguration configuration) :
 	configuration(configuration),

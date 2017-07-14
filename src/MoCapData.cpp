@@ -5,6 +5,10 @@
 #include <memory.h>
 
 
+/******************************************************************************
+ * MoCapData class
+ */
+
 MoCapData::MoCapData()
 {
 	// reset data structures

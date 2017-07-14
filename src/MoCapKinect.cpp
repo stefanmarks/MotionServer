@@ -13,7 +13,9 @@
 #include <string>
 
 
-// Structure for associating marker names with their Kinect skeleton ID
+/**
+ * Structure for associating marker names with their Kinect skeleton ID
+ */
 struct sKinectSkeletonData 
 {
 	const char*                       czPositionName;
@@ -48,6 +50,10 @@ const int SKELETON_DATA_COUNT = sizeof(SKELETON_DATA) / sizeof(SKELETON_DATA[0])
 
 
 
+/******************************************************************************
+ * MoCapKinectConfiguration class
+ */
+
 MoCapKinectConfiguration::MoCapKinectConfiguration() :
 	SystemConfiguration("Kinect"),
 	useKinect(false),
@@ -79,6 +85,10 @@ bool MoCapKinectConfiguration::handleParameter(int idx, const std::string& value
 }
 
 
+
+/******************************************************************************
+ * MoCapKinect class
+ */
 
 MoCapKinect::MoCapKinect(MoCapKinectConfiguration configuration) :
 	configuration(configuration),

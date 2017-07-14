@@ -27,10 +27,9 @@
 #define limitArrayIdx(x, y) ((x > (y-1)) ? (y-1) : (x))
 
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// MoCapFileWriter class
-//
+/******************************************************************************
+ * MoCapFileWriter class
+ */
 
 #define  LOG_CLASS "MoCapFileWriter"
 
@@ -581,10 +580,9 @@ std::string MoCapFileWriter::getTimestampFilename()
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// MoCapFileReader class
-// 
+/******************************************************************************
+ * MoCapFileReaderConfiguration class
+ */
 
 #undef  LOG_CLASS
 #define LOG_CLASS "MoCapFileReader"
@@ -617,6 +615,10 @@ bool MoCapFileReaderConfiguration::handleParameter(int idx, const std::string& v
 	return success;
 }
 
+
+/******************************************************************************
+ * MoCapFileReader class
+ */
 
 MoCapFileReader::MoCapFileReader(MoCapFileReaderConfiguration configuration) :
 	configuration(configuration),
