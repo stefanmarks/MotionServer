@@ -768,11 +768,6 @@ bool MoCapFileReader::getSceneDescription(MoCapData& refData)
 			if (success)
 			{
 				headerOK = true;
-				refData.frame.nOtherMarkers    = 0;
-				refData.frame.OtherMarkers     = NULL;
-				refData.frame.nLabeledMarkers  = 0;
-				refData.frame.Timecode         = 0;
-				refData.frame.TimecodeSubframe = 0;
 			}
 			else
 			{

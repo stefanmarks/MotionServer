@@ -238,16 +238,7 @@ bool MoCapSimulator::getSceneDescription(MoCapData& refData)
 	refData.frame.nRigidBodies = RIGID_BODY_COUNT;
 	refData.frame.nSkeletons   = SKELETON_COUNT;
 
-	refData.frame.nOtherMarkers = 0;
-	refData.frame.OtherMarkers  = NULL;
-
-	refData.frame.nLabeledMarkers = 0;
-
-	refData.frame.nForcePlates = 0;
-
 	refData.frame.fLatency = 0.01f; // simulate 10ms
-	refData.frame.Timecode = 0;
-	refData.frame.TimecodeSubframe = 0;
 
 	return true;
 }
