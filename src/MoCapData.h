@@ -13,6 +13,8 @@ public:
 	MoCapData();
 	~MoCapData();
 
+	void reset();
+
 public:
 	sMarkerSetDescription*  findMarkerSetDescription( const sMarkerSetData&  refMarkerSetData) const;
 	sRigidBodyDescription*  findRigidBodyDescription( const sRigidBodyData&  refRigidBodyData) const;

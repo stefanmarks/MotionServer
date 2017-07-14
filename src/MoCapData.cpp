@@ -11,9 +11,7 @@
 
 MoCapData::MoCapData()
 {
-	// reset data structures
-	memset(&description, 0, sizeof(description));
-	memset(&frame, 0, sizeof(frame));
+	reset();
 }
 
 
@@ -21,6 +19,14 @@ MoCapData::~MoCapData()
 {
 	freeNatNetDescription();
 	freeNatNetFrameData();
+}
+
+
+void MoCapData::reset()
+{
+	// reset data structure
+	memset(&description, 0, sizeof(description));
+	memset(&frame, 0, sizeof(frame));
 }
 
 
