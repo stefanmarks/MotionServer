@@ -185,7 +185,45 @@ bool MoCapKinect::getFrameData(MoCapData& refData)
 }
 
 
-bool MoCapKinect::processCommand(const std::string& strCommand) 
+bool MoCapKinect::getSceneDescription(MoCapData& refData)
+{
+	int descrIdx = 0;
+
+	// create markerset description and frame
+	sMarkerSetDescription* pMarkerDesc = new sMarkerSetDescription();
+	sMarkerSetData&        msData = refData.frame.MocapData[0];
+
+	// name of marker set
+	strcpy_s(pMarkerDesc->szName, sizeof(pMarkerDesc->szName), "User1");
+	strcpy_s(msData.szName, sizeof(msData.szName), pMarkerDesc->szName);
+
+	// number of markers
+	pMarkerDesc->nMarkers = SKELETON_DATA_COUNT;
+	msData.nMarkers = pMarkerDesc->nMarkers;
+
+	pMarkerDesc->szMarkerNames = new char*[pMarkerDesc->nMarkers];
+	msData.Markers = new MarkerData[msData.nMarkers];
+
+	for (int m = 0; m < pMarkerDesc->nMarkers; m++)
+	{
+		pMarkerDesc->szMarkerNames[m] = _strdup(SKELETON_DATA[m].czPositionName);
+	}
+
+	// add to description list
+	refData.description.arrDataDescriptions[descrIdx].type = Descriptor_MarkerSet;
+	refData.description.arrDataDescriptions[descrIdx].Data.MarkerSetDescription = pMarkerDesc;
+	descrIdx++;
+
+	refData.description.nDataDescriptions = descrIdx;
+
+	// pre-fill in frame data
+	refData.frame.nMarkerSets = 1;
+
+	return true;
+}
+
+
+bool MoCapKinect::processCommand(const std::string& strCommand)
 {
 	// no commands implemented yet
 	return false;
@@ -284,58 +322,6 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 			msMarker[2] = 0;
 		}
 	}
-}
-
-
-bool MoCapKinect::getSceneDescription(MoCapData& refData)
-{
-	int descrIdx = 0;
-
-	// create markerset description and frame
-	sMarkerSetDescription* pMarkerDesc = new sMarkerSetDescription();
-	sMarkerSetData&        msData      = refData.frame.MocapData[0];
-
-	// name of marker set
-	strcpy_s(pMarkerDesc->szName, sizeof(pMarkerDesc->szName), "User1");
-	strcpy_s(msData.szName, sizeof(msData.szName), pMarkerDesc->szName);
-
-	// number of markers
-	pMarkerDesc->nMarkers = SKELETON_DATA_COUNT;
-	msData.nMarkers       = SKELETON_DATA_COUNT;
-
-	pMarkerDesc->szMarkerNames = new char*[pMarkerDesc->nMarkers];
-	msData.Markers             = new MarkerData[msData.nMarkers];
-
-	for (int m = 0; m < pMarkerDesc->nMarkers; m++)
-	{
-		pMarkerDesc->szMarkerNames[m] = _strdup(SKELETON_DATA[m].czPositionName);
-	}
-
-	// add to description list
-	refData.description.arrDataDescriptions[descrIdx].type = Descriptor_MarkerSet;
-	refData.description.arrDataDescriptions[descrIdx].Data.MarkerSetDescription = pMarkerDesc;
-	descrIdx++;
-
-
-	refData.description.nDataDescriptions = descrIdx;
-
-	// pre-fill in frame data
-	refData.frame.nMarkerSets  = 1;
-	refData.frame.nRigidBodies = 0;
-	refData.frame.nSkeletons   = 0;
-
-	refData.frame.nOtherMarkers = 0;
-	refData.frame.OtherMarkers  = NULL;
-
-	refData.frame.nLabeledMarkers = 0;
-
-	refData.frame.nForcePlates = 0;
-
-	refData.frame.fLatency = 0;
-	refData.frame.Timecode = 0;
-	refData.frame.TimecodeSubframe = 0;
-
-	return true;
 }
 
 
