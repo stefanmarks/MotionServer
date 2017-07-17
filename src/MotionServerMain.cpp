@@ -133,7 +133,7 @@ public:
 				break;
 
 			case 6: // global scale factor
-				globalScale = atof(value.c_str());
+				globalScale = (float) atof(value.c_str());
 				break;
 
 			default:

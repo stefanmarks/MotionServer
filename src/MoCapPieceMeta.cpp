@@ -8,7 +8,9 @@
 
 #include <windows.h>
 #include <WinInet.h>
+
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <locale>
@@ -17,6 +19,8 @@
 
 #pragma comment(lib,"Wininet.lib")
 
+// uncomment to create file with package information
+// #define DUMP_PACKAGE_INFO_TO_FILE
 
 #define PIECEMETA_BASE_URL "http://api.piecemeta.com/"
 
@@ -118,12 +122,14 @@ MoCapPieceMeta::eStreamType MoCapPieceMeta::StreamConfiguration::getStreamType(c
 MoCapPieceMetaConfiguration::MoCapPieceMetaConfiguration() :
 	SystemConfiguration("PieceMeta"),
 	usePieceMeta(false),
+	maximumFrameCount(INT_MAX),
 	listOnly(false),
 	packageFilter(""),
 	channelFilters()
 {
 	addParameter("-pieceMetaPackage", "<package name>",    "Load a PieceMeta package");
 	addParameter("-channelFilter",    "<channel filter>",  "Filter to select channels with (this option can be used multiple times)");
+	addParameter("-maxFrame",         "<frame number>",    "Read data only up to the given frame number");
 	addOption(   "-listOnly",                              "Only list the packages and filtered channels, but do not start the actual server");
 }
 
@@ -143,6 +149,10 @@ bool MoCapPieceMetaConfiguration::handleParameter(int idx, const std::string& va
 			break;
 
 		case 2:
+			maximumFrameCount = atoi(value.c_str());
+			break;
+
+		case 3:
 			listOnly = true;
 			break;
 
@@ -180,7 +190,10 @@ bool MoCapPieceMeta::initialise()
 		int packageCount = packages.size();
 		if (packageCount > 0)
 		{
-			if (configuration.listOnly) LOG_INFO("Found " << packageCount << " packages:");
+			if (configuration.listOnly)
+			{
+				LOG_INFO("Found " << packageCount << " packages:");
+			}
 			
 			// select active package by name
 			activePackage = packages[0]; // default: first package
@@ -193,18 +206,27 @@ bool MoCapPieceMeta::initialise()
 					activePackage = package;
 				}
 
-				if (configuration.listOnly) LOG_INFO((idx + 1) << ": " << package.uuid << " - " << package.title);
+				if (configuration.listOnly)
+				{
+					LOG_INFO((idx + 1) << ": " << package.uuid << " - " << package.title);
+				}
 			}
 			LOG_INFO("Active package: " << activePackage.title);
 
+			// read channel data
 			readChannels(activePackage);
 			int numChannelsUnfiltered = activePackage.channels.size();
 
+			// filter the channels
 			activePackage.filterChannels(configuration.channelFilters);
 			int numChannels = activePackage.channels.size();
 			
-			if (configuration.listOnly) LOG_INFO("Found " << numChannelsUnfiltered << " channels, " << numChannels << " filtered:");
+			if (configuration.listOnly)
+			{
+				LOG_INFO("Found " << numChannelsUnfiltered << " channels, " << numChannels << " filtered:");
+			}
 
+			// analyse the channels
 			updateRate     = 0;
 			maxFrame       = 0;
 			longestChannel = 0;
@@ -223,23 +245,46 @@ bool MoCapPieceMeta::initialise()
 						channel.frameCount << " frames, " << 
 						channel.frameRate << " FPS");
 
-					LOG_INFO_START("   Groups: ");
+					std::stringstream groups;
 					for (auto iter = channel.groupNames.cbegin(); iter != channel.groupNames.cend(); iter++)
 					{
-						LOG_INFO_MID(((iter == channel.groupNames.cbegin()) ? "" : ", ") << *iter);
+						if (iter != channel.groupNames.cbegin())
+						{
+							groups << ", ";
+						}
+						groups << *iter;
 					}
-					LOG_INFO_END();
+					LOG_INFO("   Groups: " << groups.str());
 
-					LOG_INFO_START("   Streams: ");
+					std::stringstream streams; 
 					for (auto iter = channel.streamNames.cbegin(); iter != channel.streamNames.cend(); iter++)
 					{
-						LOG_INFO_MID(((iter == channel.streamNames.cbegin()) ? "" : ", ") << *iter);
+						if (iter != channel.streamNames.cbegin())
+						{
+							streams << ", ";
+						}
+						streams << *iter;
 					}
-					LOG_INFO_END();
+					LOG_INFO("   Streams: " << streams.str());
+
+#ifdef DUMP_PACKAGE_INFO_TO_FILE
+				std::stringstream s;
+				s << activePackage.title << "\t" << activePackage.channels.size() << "\t" <<
+					channel.uuid << "\t" << channel.title << "\t" << channel.frameCount << "\t" << channel.frameRate << "\t" <<
+					groups.str() << "\t" << streams.str() << std::endl;
+				std::ofstream logfile("dump.tsv", std::ofstream::app);
+				logfile << s.str();
+				logfile.close();
+#endif
 				}
 
+				// what sort of stream configuration do we have here?
 				channel.setConfiguration(findConfiguration(channel.streamNames));
-				if (configuration.listOnly) LOG_INFO("   Configuration: " << channel.pConfiguration->getName());
+				if (configuration.listOnly)
+				{
+					LOG_INFO("   Configuration: " << channel.pConfiguration->getName());
+				}
+
 				if (channel.pConfiguration->isValid())
 				{
 					// this channel is active
@@ -261,7 +306,7 @@ bool MoCapPieceMeta::initialise()
 				*/
 			}
 
-			// only read when not merely printing the package/channel list
+			// only read actual stream data when not merely printing the package/channel list
 			if (!configuration.listOnly)
 			{
 				if (activeChannels.size() > 0)
@@ -580,50 +625,6 @@ bool MoCapPieceMeta::readChannels(sPackage& package)
 }
 
 
-bool MoCapPieceMeta::readStreamData(sStream& stream)
-{
-	const char rotSymbol[]  = { '|', '/', '-', '\\'};
-	int        rotSymbolIdx = 0;
-
-	bool success = true;
-	stream.data.clear();
-
-	int idxFrom  = 0;
-	int stepsize = 6000;
-	while ((idxFrom < stream.frameCount) && success)
-	{
-		LOG_INFO_MID(rotSymbol[rotSymbolIdx] << "\b");
-		rotSymbolIdx = (rotSymbolIdx + 1) % sizeof(rotSymbol);
-
-		int idxTo = min(idxFrom + stepsize, stream.frameCount);
-		std::stringstream request;
-		request << PIECEMETA_BASE_URL "streams/" << stream.uuid << ".json"
-		        << "?from=" << idxFrom << "&to=" << idxTo;
-		std::string response;
-		if (MoCapPieceMeta::readURL(request.str(), response))
-		{
-			std::string errorMsg;
-			json11::Json json = json11::Json::parse(response, errorMsg);
-			if (errorMsg.empty() && json.is_object())
-			{
-				const std::vector<json11::Json>& channelJson = json["frames"].array_items();
-				for (std::vector<json11::Json>::const_iterator i = channelJson.cbegin(); i != channelJson.cend(); ++i)
-				{
-					stream.data.push_back((float) (*i).number_value());
-				}
-				idxFrom = idxTo;
-			}
-			else
-			{
-				LOG_ERROR("Could not read stream data (" << errorMsg << ")");
-				success = false;
-			}
-		}
-	}
-	return success;
-}
-
-
 bool MoCapPieceMeta::readStreams(sChannel& channel)
 {
 	bool success = false;
@@ -640,7 +641,7 @@ bool MoCapPieceMeta::readStreams(sChannel& channel)
 			const std::vector<json11::Json>& channelJson = json.array_items();
 			for (std::vector<json11::Json>::const_iterator i = channelJson.cbegin(); i != channelJson.cend(); ++i)
 			{
-				sStream stream(channel, *i);
+				sStream stream(channel, *i, configuration.maximumFrameCount);
 				channel.streams.push_back(stream);
 			}
 			success = true;
@@ -648,6 +649,55 @@ bool MoCapPieceMeta::readStreams(sChannel& channel)
 		else
 		{
 			LOG_ERROR("Could not read stream (" << errorMsg << ")");
+		}
+	}
+	return success;
+}
+
+
+bool MoCapPieceMeta::readStreamData(sStream& stream)
+{
+	const char rotSymbol[]  = { '|', '/', '-', '\\'};
+	int        rotSymbolIdx = 0;
+
+	bool success = true;
+	stream.data.clear();
+	
+	int idxFrom  = 0;
+	int stepsize = 6000;
+	while ((idxFrom < stream.frameCount) && success)
+	{
+		// display rotating bar
+		LOG_INFO_MID(rotSymbol[rotSymbolIdx] << "\b");
+		rotSymbolIdx = (rotSymbolIdx + 1) % sizeof(rotSymbol);
+
+		// determine from/to indices and build query
+		int idxTo = min(idxFrom + stepsize, stream.frameCount);
+		std::stringstream request;
+		request << PIECEMETA_BASE_URL "streams/" << stream.uuid << ".json"
+		        << "?from=" << idxFrom << "&to=" << idxTo;
+		
+		// execute query
+		std::string response;
+		if (MoCapPieceMeta::readURL(request.str(), response))
+		{
+			std::string errorMsg;
+			json11::Json json = json11::Json::parse(response, errorMsg);
+			if (errorMsg.empty() && json.is_object())
+			{
+				// data received > parse
+				const std::vector<json11::Json>& channelJson = json["frames"].array_items();
+				for (std::vector<json11::Json>::const_iterator i = channelJson.cbegin(); i != channelJson.cend(); ++i)
+				{
+					stream.data.push_back((float) (*i).number_value());
+				}
+				idxFrom = idxTo;
+			}
+			else
+			{
+				LOG_ERROR("Could not read stream data (" << errorMsg << ")");
+				success = false;
+			}
 		}
 	}
 	return success;
@@ -748,12 +798,14 @@ void MoCapPieceMeta::sChannel::analyseStreamData()
 		{
 			groupNames.push_back(stream.group);
 		}
+		std::sort(groupNames.begin(), groupNames.end());
 
 		// if not existing, add stream title to list of titles
 		if (std::find(streamNames.begin(), streamNames.end(), stream.title) == streamNames.end())
 		{
 			streamNames.push_back(stream.title);
 		}
+		std::sort(streamNames.begin(), streamNames.end());
 	}
 }
 
@@ -844,7 +896,7 @@ void MoCapPieceMeta::sChannel::getPosition(int frame, const std::string& group, 
  * MoCapPieceMeta::sStream class
  */
 
-MoCapPieceMeta::sStream::sStream(sChannel& channel, const json11::Json& json) :
+MoCapPieceMeta::sStream::sStream(sChannel& channel, const json11::Json& json, int maxFrameCount) :
 	channel(&channel)
 {
 	if (json.is_object())
@@ -854,6 +906,7 @@ MoCapPieceMeta::sStream::sStream(sChannel& channel, const json11::Json& json) :
 		uuid       = json["uuid"].string_value();
 		fps        = (float) json["fps"].number_value();
 		frameCount = json["frameCount"].int_value();
+		frameCount = min(frameCount, maxFrameCount); // limit to maximum
 	}
 }
 

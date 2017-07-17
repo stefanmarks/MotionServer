@@ -28,6 +28,7 @@ public:
 public:
 
 	bool                     usePieceMeta;
+	int                      maximumFrameCount;
 	bool                     listOnly;
 	std::string              packageFilter;
 	std::vector<std::string> channelFilters;
@@ -216,7 +217,7 @@ private:
 
 		std::vector<float> data;
 
-		sStream(sChannel& channel, const json11::Json& json);
+		sStream(sChannel& channel, const json11::Json& json, int maxFrameCount);
 	};
 
 
