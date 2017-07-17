@@ -6,7 +6,7 @@
  */
 
 // Server version information
-const int arrServerVersion[4] = { 1, 10, 3, 0 };
+const int arrServerVersion[4] = { 1, 10, 4, 0 };
 
 
 /******************************************************************************
