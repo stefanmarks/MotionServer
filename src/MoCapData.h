@@ -15,6 +15,8 @@ public:
 
 	void reset();
 
+	void applyScale(float scale);
+
 public:
 	sMarkerSetDescription*  findMarkerSetDescription( const sMarkerSetData&  refMarkerSetData) const;
 	sRigidBodyDescription*  findRigidBodyDescription( const sRigidBodyData&  refRigidBodyData) const;

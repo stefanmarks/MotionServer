@@ -30,6 +30,44 @@ void MoCapData::reset()
 }
 
 
+void MoCapData::applyScale(float scale)
+{
+	for (int msIdx = 0; msIdx < frame.nMarkerSets; msIdx++)
+	{
+		sMarkerSetData& markerset = frame.MocapData[msIdx];
+		for (int mIdx = 0; mIdx < markerset.nMarkers; mIdx++)
+		{
+			MarkerData& marker = markerset.Markers[mIdx];
+			marker[0] *= scale;
+			marker[1] *= scale;
+			marker[2] *= scale;
+		}
+	}
+
+	for (int rbIdx = 0; rbIdx < frame.nRigidBodies; rbIdx++)
+	{
+		sRigidBodyData& rigidBody = frame.RigidBodies[rbIdx];
+		rigidBody.x *= scale;
+		rigidBody.y *= scale;
+		rigidBody.z *= scale;
+		rigidBody.MeanError *= scale; // "abused" for bone length
+	}
+
+	for (int sIdx = 0; sIdx < frame.nSkeletons; sIdx++)
+	{
+		sSkeletonData& skeleton = frame.Skeletons[sIdx];
+		for (int bIdx = 0; bIdx < frame.Skeletons[sIdx].nRigidBodies; bIdx++)
+		{
+			sRigidBodyData& bone = skeleton.RigidBodyData[bIdx];
+			bone.x *= scale;
+			bone.y *= scale;
+			bone.z *= scale;
+			bone.MeanError *= scale; // "abused" for bone length
+		}
+	}
+}
+
+
 sMarkerSetDescription* MoCapData::findMarkerSetDescription(const sMarkerSetData& refMarkerSetData) const
 {
 	sMarkerSetDescription* pResult = NULL;

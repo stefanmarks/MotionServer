@@ -89,7 +89,8 @@ public:
 		commandPort(1508),
 		dataPort(1509),
 		interactionControllerPort(0),
-		writeData(false)
+		writeData(false),
+		globalScale(1.0f)
 	{
 		addOption(   "-h",                                       "Print Help");
 		addParameter("-serverName",                 "<name>",    "Name of MoCap Server (default: '" + serverName + "')");
@@ -97,6 +98,7 @@ public:
 		addParameter("-multicastAddr",              "<address>", "IP Address of multicast MotionServer (default: Unicast)");
 		addParameter("-interactionControllerPort",  "<number>",  "COM port of XBee interaction controller (-1: scan)");
 		addOption(   "-writeFile",                               "Write MoCap data into timestamped files");
+		addParameter("-scale",                      "<scale>",   "Global scale for position data (default: 1.0)");
 	}
 
 
@@ -126,6 +128,14 @@ public:
 				interactionControllerPort = atoi(value.c_str());
 				break;
 
+			case 5: // write file
+				writeData = true;
+				break;
+
+			case 6: // global scale factor
+				globalScale = atof(value.c_str());
+				break;
+
 			default:
 				success = false;
 				break;
@@ -148,6 +158,8 @@ public:
 	bool        writeData;
 
 	int         interactionControllerPort;
+
+	float       globalScale;
 };
 
 
@@ -588,6 +600,8 @@ void signalNewFrame()
 			{
 				pInteractionSystem->getFrameData(*pMocapData);
 			}
+
+			pMocapData->applyScale(config.pMain->globalScale);
 
 			mtxServer.lock();
 			if (pServer)
