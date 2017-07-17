@@ -17,6 +17,7 @@
 
 #pragma comment(lib,"Wininet.lib")
 
+
 #define PIECEMETA_BASE_URL "http://api.piecemeta.com/"
 
 
@@ -48,9 +49,11 @@ private:
  */
 const MoCapPieceMeta::StreamConfiguration MoCapPieceMeta::STREAM_CONFIGURATIONS[] =
 {
-	MoCapPieceMeta::StreamConfiguration( "XYZt", { "timestamp",  "x",  "y",  "z" }),
-	MoCapPieceMeta::StreamConfiguration("vXYZt", { "timestamp", "vx", "vy", "vz" }),
-	MoCapPieceMeta::StreamConfiguration("Unknown",{}) // this one must be last
+	MoCapPieceMeta::StreamConfiguration("t/x/y/z",    { "timestamp",  "x",  "y",  "z" }),
+	MoCapPieceMeta::StreamConfiguration("t/vx/vy/vz", { "timestamp", "vx", "vy", "vz" }),
+	MoCapPieceMeta::StreamConfiguration("T/X/Y/Z",    { "Time",       "X",  "Y",  "Z" }),
+	MoCapPieceMeta::StreamConfiguration("Tl/X/Y/Z",   { "Timestamp_LowPart", "X", "Y", "Z" }), // Timestamp_LowPart, TrackedSkeleton, #Frame, Validity, X, Y, Z, STATUS
+	MoCapPieceMeta::StreamConfiguration("Unknown",    { }) // this one must be last
 };
 
 #define STREAM_CONFIGURATION_COUNT (sizeof(STREAM_CONFIGURATIONS) / sizeof(STREAM_CONFIGURATIONS[0]))
@@ -261,7 +264,7 @@ bool MoCapPieceMeta::initialise()
 			// only read when not merely printing the package/channel list
 			if (!configuration.listOnly)
 			{
-				if (activeChannels.size() >= 0)
+				if (activeChannels.size() > 0)
 				{
 					// load data for all active channels
 					for (size_t cIdx = 0; cIdx < activeChannels.size(); cIdx++)
@@ -273,6 +276,8 @@ bool MoCapPieceMeta::initialise()
 							" (#" << cIdx <<
 							", " << channel.title <<
 							", " << channel.frameCount << " frames"
+							", " << channel.frameRate << " fps"
+							", " << channel.pConfiguration->getName() <<
 							"): Loading stream data...   0% ");
 
 						// read frames
@@ -550,7 +555,7 @@ bool MoCapPieceMeta::readChannels(sPackage& package)
 	bool success = false;
 	package.channels.clear();
 
-	std::string request = PIECEMETA_BASE_URL "/packages/" + package.uuid + "/channels.json";
+	std::string request = PIECEMETA_BASE_URL "packages/" + package.uuid + "/channels.json";
 	std::string response;
 	if (MoCapPieceMeta::readURL(request, response))
 	{
@@ -592,7 +597,7 @@ bool MoCapPieceMeta::readStreamData(sStream& stream)
 
 		int idxTo = min(idxFrom + stepsize, stream.frameCount);
 		std::stringstream request;
-		request << PIECEMETA_BASE_URL "/streams/" << stream.uuid << ".json"
+		request << PIECEMETA_BASE_URL "streams/" << stream.uuid << ".json"
 		        << "?from=" << idxFrom << "&to=" << idxTo;
 		std::string response;
 		if (MoCapPieceMeta::readURL(request.str(), response))
@@ -624,7 +629,7 @@ bool MoCapPieceMeta::readStreams(sChannel& channel)
 	bool success = false;
 	channel.streams.clear();
 
-	std::string request = PIECEMETA_BASE_URL "/channels/" + channel.uuid + "/streams.json";
+	std::string request = PIECEMETA_BASE_URL "channels/" + channel.uuid + "/streams.json";
 	std::string response;
 	if (MoCapPieceMeta::readURL(request, response))
 	{
@@ -694,7 +699,8 @@ void MoCapPieceMeta::sPackage::filterChannels(const std::vector<std::string>& ch
 		for (auto channelFilterIter = channelFilters.cbegin(); channelFilterIter != channelFilters.cend(); channelFilterIter++)
 		{
 			const std::string& channelFilter = *channelFilterIter;
-			if (channels[i].title.find(channelFilter) != std::string::npos)
+			if ((channels[i].title.find(channelFilter) != std::string::npos) ||
+				(channels[i].uuid.find(channelFilter)  != std::string::npos))
 			{
 				// at least one match: don't remove
 				filterOut = false;
@@ -819,7 +825,7 @@ void MoCapPieceMeta::sChannel::getPosition(int frame, const std::string& group, 
 				auto stream = (*streamIter).second;
 				if ((frame >= 0) && (frame < stream->frameCount))
 				{
-					vecPos[tIdx] = stream->data[frame] / 100.0f; // cm > m
+					vecPos[tIdx] = stream->data[frame];
 				}
 				reset = false;
 			}
