@@ -76,6 +76,7 @@ const int arrServerVersion[4] = { 1, 10, 3, 0 };
 class MotionServerConfiguration : public SystemConfiguration
 {
 public:
+
 	MotionServerConfiguration() :
 		SystemConfiguration("Motion Server"),
 		printHelp(false),
@@ -90,13 +91,14 @@ public:
 		interactionControllerPort(0),
 		writeData(false)
 	{
-		addOption("-h", "Print Help");
-		addParameter("-serverName", "<name>", "Name of MoCap Server (default: '" + serverName + "')");
-		addParameter("-serverAddr", "<address>", "IP Address of MotionServer (default: " + serverAddress + ")");
-		addParameter("-multicastAddr", "<address>", "IP Address of multicast MotionServer (default: Unicast)");
-		addParameter("-interactionControllerPort", "<number>", "COM port of XBee interaction controller (-1: scan)");
-		addOption("-writeFile", "Write MoCap data into timestamped files");
+		addOption(   "-h",                                       "Print Help");
+		addParameter("-serverName",                 "<name>",    "Name of MoCap Server (default: '" + serverName + "')");
+		addParameter("-serverAddr",                 "<address>", "IP Address of MotionServer (default: " + serverAddress + ")");
+		addParameter("-multicastAddr",              "<address>", "IP Address of multicast MotionServer (default: Unicast)");
+		addParameter("-interactionControllerPort",  "<number>",  "COM port of XBee interaction controller (-1: scan)");
+		addOption(   "-writeFile",                               "Write MoCap data into timestamped files");
 	}
+
 
 	virtual bool handleParameter(int idx, const std::string& value)
 	{
@@ -398,34 +400,29 @@ MoCapSystem* detectMoCapSystem()
 	if (pSystem == NULL && config.pPieceMeta->usePieceMeta)
 	{
 		MoCapPieceMeta* pPieceMeta = new MoCapPieceMeta(*config.pPieceMeta);
-		if (pPieceMeta->initialise())
+		if (config.pPieceMeta->listOnly)
 		{
-			LOG_INFO("PieceMeta database contacted");
-			pSystem = pPieceMeta;
+			// only list PieceMeta packages/channels, don't actually start the server
+			pPieceMeta->initialise();
+			serverStarting = false;
+			pPieceMeta->deinitialise();
 		}
 		else
 		{
-			LOG_WARNING("Could not connect to PieceMeta database");
-			pPieceMeta->deinitialise();
-			delete pPieceMeta;
+			if (pPieceMeta->initialise())
+			{
+				LOG_INFO("PieceMeta database contacted");
+				pSystem = pPieceMeta;
+			}
+			else
+			{
+				LOG_WARNING("Could not connect to PieceMeta database");
+				pPieceMeta->deinitialise();
+				delete pPieceMeta;
+			}
 		}
 	}
 #endif
-
-	if (pSystem == NULL)
-	{
-		// fallback: use simulator
-		LOG_INFO("No active motion capture systems found > Simulating");
-
-		pSystem = new MoCapSimulator();
-		pSystem->initialise();
-	}
-
-	// are we supposed to write data into a file?
-	if (config.pMain->writeData)
-	{
-		pMoCapFileWriter = new MoCapFileWriter(pSystem->getUpdateRate());
-	}
 
 	return pSystem;
 }
@@ -888,10 +885,29 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 			// detect MoCap system?
 			pMoCapSystem = detectMoCapSystem();
 
+			// check start flag again, because the init phase of MoCap systems might have changed it
+			// e.g., PieceMeta -listOnly
+			if (!serverStarting) break;
+
+			if (pMoCapSystem == NULL)
+			{
+				// fallback: use simulator
+				LOG_INFO("No active motion capture systems found > Simulating");
+
+				pMoCapSystem = new MoCapSimulator();
+				pMoCapSystem->initialise();
+			}
+
+			// are we supposed to write data into a file?
+			if (config.pMain->writeData)
+			{
+				pMoCapFileWriter = new MoCapFileWriter(pMoCapSystem->getUpdateRate());
+			}
+
 			// detect interaction system
 			pInteractionSystem = detectInteractionSystem();
 
-			// start server
+			// start server 
 			if (createServer())
 			{
 				serverRunning    = true;

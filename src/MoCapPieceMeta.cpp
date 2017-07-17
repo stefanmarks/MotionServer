@@ -115,11 +115,13 @@ MoCapPieceMeta::eStreamType MoCapPieceMeta::StreamConfiguration::getStreamType(c
 MoCapPieceMetaConfiguration::MoCapPieceMetaConfiguration() :
 	SystemConfiguration("PieceMeta"),
 	usePieceMeta(false),
+	listOnly(false),
 	packageFilter(""),
-	channelFilter("")
+	channelFilters()
 {
 	addParameter("-pieceMetaPackage", "<package name>",    "Load a PieceMeta package");
-	addParameter("-channelFilter",    "<channel filter>",  "Filter to select channels with");
+	addParameter("-channelFilter",    "<channel filter>",  "Filter to select channels with (this option can be used multiple times)");
+	addOption(   "-listOnly",                              "Only list the packages and filtered channels, but do not start the actual server");
 }
 
 
@@ -134,7 +136,12 @@ bool MoCapPieceMetaConfiguration::handleParameter(int idx, const std::string& va
 			break;
 
 		case 1:
-			channelFilter = value;
+			channelFilters.push_back(value);
+			break;
+
+		case 2:
+			listOnly = true;
+			break;
 
 		default: 
 			success = false;
@@ -163,118 +170,157 @@ bool MoCapPieceMeta::initialise()
 {
 	if (!initialised && configuration.usePieceMeta)
 	{
-		LOG_INFO("Initialising");
+		if (!configuration.listOnly) LOG_INFO("Initialising");
 
 		// query packages
 		std::vector<sPackage> packages = readPackages();
 		int packageCount = packages.size();
 		if (packageCount > 0)
 		{
+			if (configuration.listOnly) LOG_INFO("Found " << packageCount << " packages:");
+			
+			// select active package by name
 			activePackage = packages[0]; // default: first package
-			// rint packages and select active one by name
-			LOG_INFO("Found " << packageCount << " packages:");
 			for (int idx = 0; idx < packageCount; idx++)
 			{
 				const sPackage& package = packages[idx];
-				LOG_INFO((idx + 1) << ": " << package.uuid << " - " << package.title);
-
-				if ((package.uuid.find(configuration.packageFilter) != std::string::npos) ||
+				if ((package.uuid.find(configuration.packageFilter)  != std::string::npos) ||
 					(package.title.find(configuration.packageFilter) != std::string::npos))
 				{
 					activePackage = package;
 				}
-			}
 
+				if (configuration.listOnly) LOG_INFO((idx + 1) << ": " << package.uuid << " - " << package.title);
+			}
 			LOG_INFO("Active package: " << activePackage.title);
 
 			readChannels(activePackage);
 			int numChannelsUnfiltered = activePackage.channels.size();
 
-			activePackage.filterChannels(configuration.channelFilter);
+			activePackage.filterChannels(configuration.channelFilters);
 			int numChannels = activePackage.channels.size();
-			LOG_INFO("Found " << numChannelsUnfiltered << " channels, " << numChannels << " filtered:");
+			
+			if (configuration.listOnly) LOG_INFO("Found " << numChannelsUnfiltered << " channels, " << numChannels << " filtered:");
 
-			updateRate = 0;
-			activeChannelIdx = -1;
-			int totalStreams = 0;
+			updateRate     = 0;
+			maxFrame       = 0;
+			longestChannel = 0;
+			activeChannels.clear();
+			
 			for (int cIdx = 0; cIdx < numChannels; cIdx++)
 			{
 				sChannel& channel = activePackage.channels[cIdx];
 				readStreams(channel);
 				channel.analyseStreamData();
-
-				int numStreams = channel.streams.size();
-				totalStreams += numStreams;
 				
-				LOG_INFO((cIdx + 1) << ": " << channel.uuid << " - " << channel.title << " - " <<
-					numStreams << " streams, " << channel.frameCount << " frames, " << channel.frameRate << " FPS");
-
-				LOG_INFO_START("  Groups: ");
-				for (auto iter = channel.groupNames.cbegin(); iter != channel.groupNames.cend(); iter++)
+				if (configuration.listOnly)
 				{
-					LOG_INFO_MID(((iter == channel.groupNames.cbegin()) ? "" : ", ") << *iter);
-				}
-				LOG_INFO_END();
+					LOG_INFO(cIdx << ": " << channel.uuid << " - " << channel.title << " - " <<
+						channel.streams.size() << " streams, " << 
+						channel.frameCount << " frames, " << 
+						channel.frameRate << " FPS");
 
-				LOG_INFO_START("  Streams: ");
-				for (auto iter = channel.streamNames.cbegin(); iter != channel.streamNames.cend(); iter++)
-				{
-					LOG_INFO_MID(((iter == channel.streamNames.cbegin()) ? "" : ", ") << *iter);
+					LOG_INFO_START("   Groups: ");
+					for (auto iter = channel.groupNames.cbegin(); iter != channel.groupNames.cend(); iter++)
+					{
+						LOG_INFO_MID(((iter == channel.groupNames.cbegin()) ? "" : ", ") << *iter);
+					}
+					LOG_INFO_END();
+
+					LOG_INFO_START("   Streams: ");
+					for (auto iter = channel.streamNames.cbegin(); iter != channel.streamNames.cend(); iter++)
+					{
+						LOG_INFO_MID(((iter == channel.streamNames.cbegin()) ? "" : ", ") << *iter);
+					}
+					LOG_INFO_END();
 				}
 
 				channel.setConfiguration(findConfiguration(channel.streamNames));
-				LOG_INFO_MID(" (Configuration " << channel.pConfiguration->getName() << ")");
-				if (activeChannelIdx < 0 && channel.pConfiguration->isValid())
+				if (configuration.listOnly) LOG_INFO("   Configuration: " << channel.pConfiguration->getName());
+				if (channel.pConfiguration->isValid())
 				{
-					activeChannelIdx = cIdx;
-					LOG_INFO_MID(" < Active");
+					// this channel is active
+					activeChannels.push_back(cIdx);
+					// which channel has most frames?
+					if (channel.frameCount > activePackage.channels[longestChannel].frameCount)
+					{
+						longestChannel = cIdx;
+					}
 				}
-				LOG_INFO_END();
 
+				/*
 				LOG_INFO_START("  Dump: ");
 				for (auto iter = channel.streams.cbegin(); iter != channel.streams.cend(); iter++)
 				{
 					LOG_INFO_MID(((iter == channel.streams.cbegin()) ? "" : ", ") << (*iter).group << "." << (*iter).title);
 				}
 				LOG_INFO_END();
-			}
-
-			if (activeChannelIdx >= 0)
-			{
-				// read frames
-				LOG_INFO_START("Loading Stream Data:   0% ");
-				int streamCount = 0;
-				sChannel& channel = activePackage.channels[activeChannelIdx];
-				int numStreams = channel.streams.size();
-				for (int sIdx = 0; sIdx < numStreams; sIdx++)
-				{
-					streamCount++;
-					LOG_INFO_MID("\b\b\b\b\b" << std::setw(3) << std::right << (streamCount * 100 / totalStreams) << "% ");
-					sStream& stream = channel.streams[sIdx];
-					readStreamData(stream);
-				}
-				LOG_INFO_END();
-
-				updateRate   = channel.frameRate;
-				currentFrame = 0;
-				initialised  = true;
-
-				/*
-				for (int frame = 0; frame < 10; frame++)
-				{
-					LOG_INFO("  Frame " << frame << ":");
-					for (auto iter = channel.groupNames.cbegin(); iter != channel.groupNames.cend(); iter++)
-					{
-						float vec[3] = { 0,0,0 };
-						channel.getPosition(100, *iter, vec);
-						LOG_INFO("    " << *iter << ": " << vec[0] << "," << vec[1] << "," << vec[2]);
-					}
-				}
 				*/
 			}
-			else
+
+			// only read when not merely printing the package/channel list
+			if (!configuration.listOnly)
 			{
-				LOG_WARNING("No suitable channel found");
+				if (activeChannels.size() >= 0)
+				{
+					// load data for all active channels
+					for (size_t cIdx = 0; cIdx < activeChannels.size(); cIdx++)
+					{
+						int channelIdx = activeChannels[cIdx];
+						sChannel& channel = activePackage.channels[channelIdx];
+
+						LOG_INFO_START("Channel " << channelIdx << 
+							" (#" << cIdx <<
+							", " << channel.title <<
+							", " << channel.frameCount << " frames"
+							"): Loading stream data...   0% ");
+
+						// read frames
+						int numStreams  = channel.streams.size();
+						for (int sIdx = 0; sIdx < numStreams; sIdx++)
+						{
+							LOG_INFO_MID("\b\b\b\b\b" << std::setw(3) << std::right << (sIdx * 100 / numStreams) << "% ");
+							sStream& stream = channel.streams[sIdx];
+							readStreamData(stream);
+						}
+						LOG_INFO_MID("\b\b\b\b\b100%  ");
+						LOG_INFO_END();
+
+						if (updateRate == 0)
+						{
+							// first channel defines framerate
+							updateRate = channel.frameRate;
+						}
+						else if (updateRate != channel.frameRate)
+						{
+							// framerate should be the same for all channels
+							LOG_WARNING("Different framerate for channel " << cIdx);
+						}
+
+						maxFrame = max(maxFrame, channel.frameCount);
+
+						/*
+						// print data of the 10 first frames
+						for (int frame = 0; frame < 10; frame++)
+						{
+							LOG_INFO("  Frame " << frame << ":");
+							for (auto iter = channel.groupNames.cbegin(); iter != channel.groupNames.cend(); iter++)
+							{
+								float vec[3] = { 0,0,0 };
+								channel.getPosition(100, *iter, vec);
+								LOG_INFO("    " << *iter << ": " << vec[0] << "," << vec[1] << "," << vec[2]);
+							}
+						}
+						*/
+					}
+
+					currentFrame = 0;
+					initialised  = true;
+				}
+				else
+				{
+					LOG_WARNING("No suitable channel found");
+				}
 			}
 		}
 	}
@@ -321,39 +367,46 @@ bool MoCapPieceMeta::getSceneDescription(MoCapData& refData)
 	bool success = false;
 	if (initialised)
 	{
-		sChannel& channel = activePackage.channels[activeChannelIdx];
-		
-		int descrIdx = 0;
-		
-		// create markerset description and frame
-		sMarkerSetDescription* pMarkerDesc = new sMarkerSetDescription();
-		sMarkerSetData&        msData = refData.frame.MocapData[0];
+		int descrIdx       = 0;
+		int markersetCount = 0;
 
-		// name of marker set
-		strcpy_s(pMarkerDesc->szName, sizeof(pMarkerDesc->szName), channel.title.substr(0, 4).c_str());
-		strcpy_s(msData.szName, sizeof(msData.szName), pMarkerDesc->szName);
-
-		// number of markers
-		pMarkerDesc->nMarkers = channel.groupNames.size();
-		msData.nMarkers       = pMarkerDesc->nMarkers;
-
-		pMarkerDesc->szMarkerNames = new char*[pMarkerDesc->nMarkers];
-		msData.Markers = new MarkerData[msData.nMarkers];
-
-		for (int m = 0; m < pMarkerDesc->nMarkers; m++)
+		// run through all active channels
+		for (size_t cIdx = 0 ; cIdx < activeChannels.size() ; cIdx++)
 		{
-			pMarkerDesc->szMarkerNames[m] = _strdup(channel.groupNames.at(m).c_str());
-		}
+			int channelIdx = activeChannels[cIdx];
+			sChannel& channel = activePackage.channels[channelIdx];
 
-		// add to description list
-		refData.description.arrDataDescriptions[descrIdx].type = Descriptor_MarkerSet;
-		refData.description.arrDataDescriptions[descrIdx].Data.MarkerSetDescription = pMarkerDesc;
-		descrIdx++;
+			// create markerset description and frame
+			sMarkerSetDescription* pMarkerDesc = new sMarkerSetDescription();
+			sMarkerSetData&        msData = refData.frame.MocapData[markersetCount];
+
+			// name of marker set = channel index
+			sprintf_s(pMarkerDesc->szName, "Channel%d", cIdx);
+			strcpy_s(msData.szName, sizeof(msData.szName), pMarkerDesc->szName);
+
+			// number of markers
+			pMarkerDesc->nMarkers = channel.groupNames.size();
+			msData.nMarkers = pMarkerDesc->nMarkers;
+
+			pMarkerDesc->szMarkerNames = new char*[pMarkerDesc->nMarkers];
+			msData.Markers = new MarkerData[msData.nMarkers];
+
+			for (int m = 0; m < pMarkerDesc->nMarkers; m++)
+			{
+				pMarkerDesc->szMarkerNames[m] = _strdup(channel.groupNames.at(m).c_str());
+			}
+
+			// add to description list
+			refData.description.arrDataDescriptions[descrIdx].type = Descriptor_MarkerSet;
+			refData.description.arrDataDescriptions[descrIdx].Data.MarkerSetDescription = pMarkerDesc;
+			descrIdx++;
+			markersetCount++;
+		}
 
 		refData.description.nDataDescriptions = descrIdx;
 
 		// pre-fill in frame data
-		refData.frame.nMarkerSets = 1;
+		refData.frame.nMarkerSets = markersetCount;
 
 		success = true;
 		LOG_INFO("Requesting scene description")
@@ -369,21 +422,25 @@ bool MoCapPieceMeta::getFrameData(MoCapData& refData)
 
 	if (initialised)
 	{
-		sChannel& channel = activePackage.channels[activeChannelIdx];
-		
-		// get the frame number and timestamp
+		// get the frame number and timestamp of the longest channel
 		refData.frame.iFrame     = currentFrame;
-		refData.frame.fTimestamp = channel.getTimestamp(currentFrame);
+		refData.frame.fTimestamp = activePackage.channels[longestChannel].getTimestamp(currentFrame);
 
-		// do markers
-		sMarkerSetData& msData = refData.frame.MocapData[0];
-		for (int m = 0; m < msData.nMarkers; m++)
+		for (size_t cIdx = 0; cIdx < activeChannels.size(); cIdx++)
 		{
-			const std::string groupName = channel.groupNames.at(m);
-			channel.getPosition(currentFrame, groupName, msData.Markers[m]);
+			int channelIdx = activeChannels[cIdx];
+			sChannel& channel = activePackage.channels[channelIdx];
+
+			// do markers
+			sMarkerSetData& msData = refData.frame.MocapData[cIdx];
+			for (int mIdx = 0; mIdx < msData.nMarkers; mIdx++)
+			{
+				const std::string groupName = channel.groupNames.at(mIdx);
+				channel.getPosition(currentFrame, groupName, msData.Markers[mIdx], true);
+			}
 		}
 
-		currentFrame = (currentFrame + 1) % channel.frameCount;
+		currentFrame = (currentFrame + 1) % maxFrame;
 
 		success = true;
 	}
@@ -627,13 +684,23 @@ MoCapPieceMeta::sChannel* MoCapPieceMeta::sPackage::findChannel(const std::strin
 }
 
 
-void MoCapPieceMeta::sPackage::filterChannels(const std::string& channelFilter)
+void MoCapPieceMeta::sPackage::filterChannels(const std::vector<std::string>& channelFilters)
 {
-	if (channelFilter.empty()) return;
+	if (channelFilters.empty()) return;
 
 	for (int i = channels.size() - 1 ; i >= 0 ; i--)
 	{
-		if (channels[i].title.find(channelFilter) == std::string::npos)
+		bool filterOut = true;
+		for (auto channelFilterIter = channelFilters.cbegin(); channelFilterIter != channelFilters.cend(); channelFilterIter++)
+		{
+			const std::string& channelFilter = *channelFilterIter;
+			if (channels[i].title.find(channelFilter) != std::string::npos)
+			{
+				// at least one match: don't remove
+				filterOut = false;
+			}
+		}
+		if (filterOut)
 		{
 			channels.erase(channels.begin() + i);
 		}
@@ -734,7 +801,7 @@ float MoCapPieceMeta::sChannel::getTimestamp(int frame)
 }
 
 
-void MoCapPieceMeta::sChannel::getPosition(int frame, const std::string& group, float vecPos[3])
+void MoCapPieceMeta::sChannel::getPosition(int frame, const std::string& group, float vecPos[3], bool reset)
 {
 	// find the group
 	auto groupIter = streamGroupMap.find(group);
@@ -752,10 +819,17 @@ void MoCapPieceMeta::sChannel::getPosition(int frame, const std::string& group, 
 				auto stream = (*streamIter).second;
 				if ((frame >= 0) && (frame < stream->frameCount))
 				{
-					vecPos[tIdx] = stream->data[frame] / 100.0; // cm > m
+					vecPos[tIdx] = stream->data[frame] / 100.0f; // cm > m
 				}
+				reset = false;
 			}
 		}
+	}
+
+	if (reset)
+	{
+		// no data found > reset to 0
+		vecPos[0] = vecPos[1] = vecPos[2] = 0;
 	}
 }
 

@@ -27,9 +27,10 @@ public:
 
 public:
 
-	bool        usePieceMeta;
-	std::string packageFilter;
-	std::string channelFilter;
+	bool                     usePieceMeta;
+	bool                     listOnly;
+	std::string              packageFilter;
+	std::vector<std::string> channelFilters;
 };
 
 
@@ -163,7 +164,7 @@ private:
 		sPackage(const json11::Json& json);
 
 		sChannel* findChannel(const std::string& channelUUID);
-		void      filterChannels(const std::string& channelFilter);
+		void      filterChannels(const std::vector<std::string>& channelFilter);
 	};
 
 
@@ -196,7 +197,7 @@ private:
 		void  setConfiguration(const StreamConfiguration* pConfiguration);
 		
 		float getTimestamp(int frame);
-		void  getPosition(int frame, const std::string& group, float vecPos[3]);
+		void  getPosition(int frame, const std::string& group, float vecPos[3], bool reset);
 	};
 
 
@@ -226,10 +227,11 @@ private:
 	bool  initialised;
 	bool  running;
 	float updateRate;
-	int   currentFrame;
+	int   maxFrame, currentFrame;
 
-	sPackage activePackage;
-	int      activeChannelIdx;
+	sPackage         activePackage;
+	std::vector<int> activeChannels;
+	int              longestChannel;
 
 	char readBuffer[65536];
 
