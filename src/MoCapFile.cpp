@@ -65,7 +65,7 @@ bool MoCapFileWriter::writeSceneDescription(const MoCapData& refData)
 	if (openFile())
 	{
 		// header
-		writeTag(TAG_HEADER); write(1); write(updateRate);  nextLine(); // 1: File version
+		writeTag(TAG_HEADER); write(2); write(updateRate);  nextLine(); // 2: File version
 
 		// description block intro and count
 		writeTag(TAG_SECTION_DESCRIPTIONS); write(refData.description.nDataDescriptions); nextLine();
@@ -135,8 +135,9 @@ bool MoCapFileWriter::writeFrameData(const MoCapData& refData)
 			columnHeaderWritten = true;
 		}
 
-		// frame number and latency
+		// frame number, timestamp, and latency
 		write(frame.iFrame);
+		write((float) frame.fTimestamp);
 		write(frame.fLatency);
 		
 		// markersets
@@ -838,8 +839,21 @@ bool MoCapFileReader::getFrameData(MoCapData& refData)
 	{
 		sFrameOfMocapData& frame = refData.frame;
 
-		// frame number and latency
-		frame.iFrame   = readInt();
+		// frame number
+		frame.iFrame = readInt();
+		
+		// timestamp (wasn't part of file version 1)
+		if (fileVersion > 1)
+		{
+			frame.fTimestamp = readFloat();
+		}
+		else
+		{
+			// no timestamp in file > reconstruct from frame number
+			frame.fTimestamp = frame.iFrame / (double) updateRate;
+		}
+
+		// latency
 		frame.fLatency = readFloat();
 
 		// markersets
@@ -986,7 +1000,8 @@ bool MoCapFileReader::readHeader()
 				<< ", Sample Rate: " << updateRate << "Hz"
 				<< ", Descriptions: " << nDescriptions << ")");
 
-			success = (fileVersion == 1);
+			// file version 1 and 2 are valid so far
+			success = (fileVersion >= 1) && (fileVersion <= 2);
 		}
 	}
 	else
