@@ -945,7 +945,7 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 						LOG_WARNING("Cannot use real-time Interaction System data");
 					}
 				}
-				
+
 				// if enabled, write description to file
 				if (pMoCapFileWriter)
 				{
@@ -956,10 +956,16 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 				pServer->SetMessageResponseCallback(callbackNatNetServerRequestHandler);
 
 				// start streaming thread
-				float updateRate    = pMoCapSystem->getUpdateRate(); 
+				float updateRate    = pMoCapSystem->getUpdateRate();
 				frameCallbackModulo = (int) updateRate;
 				std::thread streamingThread(mocapTimerThread);
 				LOG_INFO("Streaming thread started (Update rate: " << updateRate << "Hz)");
+
+				// is the global scale unusual?
+				if ((config.pMain->globalScale < 0.99f) || (config.pMain->globalScale > 1.01f))
+				{
+					LOG_INFO("Global scale factor: " << config.pMain->globalScale);
+				}
 
 				// That's all folks
 				LOG_INFO("MotionServer started");
