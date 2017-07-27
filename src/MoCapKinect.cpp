@@ -13,6 +13,10 @@
 #include <string>
 
 
+#define MAX_USERS         2
+#define USER_NOT_TRACKED -1
+
+
 /**
  * Structure for associating marker names with their Kinect skeleton ID
  */
@@ -21,6 +25,7 @@ struct sKinectSkeletonData
 	const char*                       czPositionName;
 	const NUI_SKELETON_POSITION_INDEX index;
 };
+
 
 const sKinectSkeletonData SKELETON_DATA[]
 {
@@ -96,7 +101,11 @@ MoCapKinect::MoCapKinect(MoCapKinectConfiguration configuration) :
 	running(true),
 	pNuiSensor(NULL)
 {
-	// nothing else to do
+	// assume no tracked users in the beginning
+	for (int userIdx = 0; userIdx < MAX_USERS; userIdx++)
+	{
+		userSkeletonIdx.push_back(USER_NOT_TRACKED);
+	}
 }
 
 
@@ -189,35 +198,38 @@ bool MoCapKinect::getSceneDescription(MoCapData& refData)
 {
 	int descrIdx = 0;
 
-	// create markerset description and frame
-	sMarkerSetDescription* pMarkerDesc = new sMarkerSetDescription();
-	sMarkerSetData&        msData = refData.frame.MocapData[0];
-
-	// name of marker set
-	strcpy_s(pMarkerDesc->szName, sizeof(pMarkerDesc->szName), "User1");
-	strcpy_s(msData.szName, sizeof(msData.szName), pMarkerDesc->szName);
-
-	// number of markers
-	pMarkerDesc->nMarkers = SKELETON_DATA_COUNT;
-	msData.nMarkers = pMarkerDesc->nMarkers;
-
-	pMarkerDesc->szMarkerNames = new char*[pMarkerDesc->nMarkers];
-	msData.Markers = new MarkerData[msData.nMarkers];
-
-	for (int m = 0; m < pMarkerDesc->nMarkers; m++)
+	for (int userIdx = 0; userIdx < MAX_USERS; userIdx++)
 	{
-		pMarkerDesc->szMarkerNames[m] = _strdup(SKELETON_DATA[m].czPositionName);
+		// create markerset description and frame
+		sMarkerSetDescription* pMarkerDesc = new sMarkerSetDescription();
+		sMarkerSetData&        msData = refData.frame.MocapData[userIdx];
+
+		// name of marker set
+		sprintf_s(pMarkerDesc->szName, sizeof(pMarkerDesc->szName), "User%d", userIdx + 1);
+		strcpy_s(msData.szName, sizeof(msData.szName), pMarkerDesc->szName);
+
+		// number of markers
+		pMarkerDesc->nMarkers = SKELETON_DATA_COUNT;
+		msData.nMarkers = pMarkerDesc->nMarkers;
+
+		pMarkerDesc->szMarkerNames = new char*[pMarkerDesc->nMarkers];
+		msData.Markers = new MarkerData[msData.nMarkers];
+
+		for (int m = 0; m < pMarkerDesc->nMarkers; m++)
+		{
+			pMarkerDesc->szMarkerNames[m] = _strdup(SKELETON_DATA[m].czPositionName);
+		}
+
+		// add to description list
+		refData.description.arrDataDescriptions[descrIdx].type = Descriptor_MarkerSet;
+		refData.description.arrDataDescriptions[descrIdx].Data.MarkerSetDescription = pMarkerDesc;
+		descrIdx++;
+
+		refData.description.nDataDescriptions = descrIdx;
 	}
 
-	// add to description list
-	refData.description.arrDataDescriptions[descrIdx].type = Descriptor_MarkerSet;
-	refData.description.arrDataDescriptions[descrIdx].Data.MarkerSetDescription = pMarkerDesc;
-	descrIdx++;
-
-	refData.description.nDataDescriptions = descrIdx;
-
 	// pre-fill in frame data
-	refData.frame.nMarkerSets = 1;
+	refData.frame.nMarkerSets = MAX_USERS;
 
 	return true;
 }
@@ -254,43 +266,36 @@ bool MoCapKinect::update()
 
 void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame, MoCapData& refData)
 {
-	// TODO: Handle more than one user in an organised way
-	// This code below will simply search for the first tracked skeleton
-	int firstUser = -1;
-	for (int userIdx = 0; userIdx < NUI_SKELETON_COUNT; userIdx++)
+	// handle lost and found users
+	checkUserLost(refSkeletonFrame);
+	checkUserFound(refSkeletonFrame);
+
+	// transfer data to MoCap data structure
+	for (int userIdx = 0; userIdx < MAX_USERS; userIdx++)
 	{
-		const NUI_SKELETON_DATA& skeleton = refSkeletonFrame.SkeletonData[userIdx];
-		// only check for fully tracked users, not POSITION_ONLY
-		if (skeleton.eTrackingState == NUI_SKELETON_TRACKED)
+		if (userSkeletonIdx[userIdx] != USER_NOT_TRACKED)
 		{
-			firstUser = userIdx;
-			break;
-		}
-	}
+			// TODO: Do a proper transformation using the clip plane coefficients
+			// e.g., https://gamedev.stackexchange.com/questions/80310/transform-world-space-using-kinect-floorclipplane-to-move-origin-to-floor-while
+			float yOffset = refSkeletonFrame.vFloorClipPlane.w;
 
-	if (firstUser >= 0)
-	{
-		// TODO: Do a proper transformation using the clip plane coefficients
-		// e.g., https://gamedev.stackexchange.com/questions/80310/transform-world-space-using-kinect-floorclipplane-to-move-origin-to-floor-while
-		float yOffset = refSkeletonFrame.vFloorClipPlane.w;
+			const NUI_SKELETON_DATA& skeleton = refSkeletonFrame.SkeletonData[userSkeletonIdx[userIdx]];
+			sMarkerSetData&          msData   = refData.frame.MocapData[userIdx];
 
-		const NUI_SKELETON_DATA& skeleton = refSkeletonFrame.SkeletonData[firstUser];
-		sMarkerSetData&          msData   = refData.frame.MocapData[0];
-		
-		//LOG_INFO_START("Kinect skeleton " << firstUser <<
-		//	"\tx:" << skeleton.Position.x << "\ty:" << skeleton.Position.y << "\tz:" << skeleton.Position.z << "\t");
+			//LOG_INFO_START("Kinect skeleton " << firstUser <<
+			//	"\tx:" << skeleton.Position.x << "\ty:" << skeleton.Position.y << "\tz:" << skeleton.Position.z << "\t");
 
-		// go through all bones
-		for (int mIdx = 0; mIdx < msData.nMarkers; mIdx++)
-		{
-			int            skeletonIdx = SKELETON_DATA[mIdx].index;
-			const Vector4& point       = skeleton.SkeletonPositions[skeletonIdx];
-			MarkerData&    msMarker    = msData.Markers[mIdx];
-
-			//LOG_INFO_MID(skeleton.eSkeletonPositionTrackingState[mIdx]);
-
-			switch (skeleton.eSkeletonPositionTrackingState[skeletonIdx])
+			// go through all bones
+			for (int mIdx = 0; mIdx < msData.nMarkers; mIdx++)
 			{
+				int            skeletonIdx = SKELETON_DATA[mIdx].index;
+				const Vector4& point       = skeleton.SkeletonPositions[skeletonIdx];
+				MarkerData&    msMarker    = msData.Markers[mIdx];
+
+				//LOG_INFO_MID(skeleton.eSkeletonPositionTrackingState[mIdx]);
+
+				switch (skeleton.eSkeletonPositionTrackingState[skeletonIdx])
+				{
 				case NUI_SKELETON_POSITION_INFERRED:
 					//fallthrough
 				case NUI_SKELETON_POSITION_TRACKED:
@@ -305,27 +310,67 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 					msMarker[1] = 0;
 					msMarker[2] = 0;
 					break;
+				}
 			}
+			//LOG_INFO_END();
 		}
-		//LOG_INFO_END();
-	}
-	else
-	{
-		// nothing tracked > zero out all the data
-		sMarkerSetData& msData = refData.frame.MocapData[0];
-
-		for (int mIdx = 0; mIdx < msData.nMarkers; mIdx++)
+		else
 		{
-			MarkerData& msMarker = msData.Markers[mIdx];
-			msMarker[0] = 0;
-			msMarker[1] = 0;
-			msMarker[2] = 0;
+			// user not tracked at all > zero out all the data
+			sMarkerSetData& msData = refData.frame.MocapData[userIdx];
+
+			for (int mIdx = 0; mIdx < msData.nMarkers; mIdx++)
+			{
+				MarkerData& msMarker = msData.Markers[mIdx];
+				msMarker[0] = 0;
+				msMarker[1] = 0;
+				msMarker[2] = 0;
+			}
 		}
 	}
 }
 
 
-bool MoCapKinect::deinitialise() 
+void MoCapKinect::checkUserLost(const NUI_SKELETON_FRAME& refSkeletonFrame)
+{
+	for (int userIdx = 0; userIdx < MAX_USERS; userIdx++)
+	{
+		if (userSkeletonIdx[userIdx] != USER_NOT_TRACKED)
+		{
+			const NUI_SKELETON_DATA& skeleton = refSkeletonFrame.SkeletonData[userSkeletonIdx[userIdx]];
+			if (skeleton.eTrackingState == NUI_SKELETON_NOT_TRACKED)
+			{
+				userSkeletonIdx[userIdx] = USER_NOT_TRACKED;
+			}
+		}
+	}
+}
+
+
+void MoCapKinect::checkUserFound(const NUI_SKELETON_FRAME& refSkeletonFrame)
+{
+	for (int skeletonIdx = 0; skeletonIdx < NUI_SKELETON_COUNT; skeletonIdx++)
+	{
+		const NUI_SKELETON_DATA& skeleton = refSkeletonFrame.SkeletonData[skeletonIdx];
+		// only check for fully tracked users, not POSITION_ONLY
+		if (skeleton.eTrackingState == NUI_SKELETON_TRACKED)
+		{
+			// TODO: Hardcoded for a maximum of two users. What if there are more possible...?
+			if (userSkeletonIdx[0] < 0 && skeletonIdx != userSkeletonIdx[1])
+			{
+				userSkeletonIdx[0] = skeletonIdx;
+			}
+			else if (userSkeletonIdx[1] < 0 && skeletonIdx != userSkeletonIdx[0])
+			{
+				userSkeletonIdx[1] = skeletonIdx;
+			}
+		}
+	}
+
+}
+
+
+bool MoCapKinect::deinitialise()
 {
 	if (initialised) 
 	{

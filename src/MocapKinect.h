@@ -49,16 +49,20 @@ public:
 private:
 
 	void handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame, MoCapData& refData);
+	void checkUserLost(const NUI_SKELETON_FRAME& refSkeletonFrame);
+	void checkUserFound(const NUI_SKELETON_FRAME& refSkeletonFrame);
 	void cleanup();
 
 private:
 
 	MoCapKinectConfiguration configuration;
 
-	bool        initialised;
-	bool        running;
-	INuiSensor* pNuiSensor;
-	HANDLE      kinectHandle;
+	bool             initialised;
+	bool             running;
+	INuiSensor*      pNuiSensor;
+	HANDLE           kinectHandle;
+
+	std::vector<int> userSkeletonIdx;
 };
 
 #endif
