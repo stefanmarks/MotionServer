@@ -5,9 +5,6 @@
  *
  */
 
-// Server version information
-const int arrServerVersion[4] = { 1, 10, 4, 0 };
-
 
 /******************************************************************************
  * Includes
@@ -32,6 +29,7 @@ const int arrServerVersion[4] = { 1, 10, 4, 0 };
 
 #include <algorithm>
 #include <chrono>
+#include <codecvt>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -47,6 +45,7 @@ const int arrServerVersion[4] = { 1, 10, 4, 0 };
 #include "NatNetServer.h"
 #include "MoCapData.h"
 #include "SystemConfiguration.h"
+#include "Version.h"
 
 #include "Logging.h"
 #undef   LOG_CLASS
@@ -245,7 +244,7 @@ const char arrCallbackAnimation[] = { '-', '/', '|', '\\' }; // characters for t
 // Function prototypes
 //
 
-void parseCommandLine(int nArguments, _TCHAR* arrArguments[]);
+void parseCommandLine(const std::vector<std::string>& arguments);
 bool createServer();
 bool isServerRunning();
 void signalNewFrame();
@@ -292,46 +291,44 @@ void printUsage()
 /**
  * Parses the command line
  */
-void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
+void parseCommandLine(const std::vector<std::string>& arguments)
 {
-	if (nArguments == 1)
+	if (arguments.size() == 1)
 	{
 		// no command line option passed: print usage
 		config.pMain->printHelp = true;
 	}
 
-	int argIdx = 1;
-	while (argIdx < nArguments)
+	size_t argIdx = 1;
+	while (argIdx < arguments.size())
 	{
-		// convert wchar argument into lowercase UTF8
-		std::wstring strArgW(arrArguments[argIdx]);
-		std::string  strArg;
-		std::transform(strArgW.begin(), strArgW.end(), std::back_inserter(strArg), ::tolower);
+		// convert argument into lowercase
+		std::string strArg = arguments[argIdx];
+		std::string strArgLowercase;
+		std::transform(strArg.begin(), strArg.end(), std::back_inserter(strArgLowercase), ::tolower);
 
 		// check arguments with no additional parameter
-		if (argIdx < nArguments)
+		if (argIdx < arguments.size())
 		{
 			// run option through systems
-			for (std::vector<SystemConfiguration*>::const_iterator sys = config.systemConfigurations.cbegin();
-				sys != config.systemConfigurations.cend();
-				sys++)
+			for (auto iterConfig = config.systemConfigurations.cbegin();
+				iterConfig != config.systemConfigurations.cend();
+				iterConfig++)
 			{
-				(*sys)->processOption(strArg);
+				(*iterConfig)->processOption(strArgLowercase);
 			}
 		}
 		// check arguments with one additional parameter
-		if (argIdx + 1 < nArguments)
+		if (argIdx + 1 < arguments.size())
 		{
-			// convert parameter to UTF8
-			std::wstring strParam1W(arrArguments[argIdx + 1]);
-			std::string  strParam1(strParam1W.begin(), strParam1W.end());
-
+			// get parameter
+			std::string strParam1(arguments[argIdx + 1]);
 			// run option through systems
-			for (std::vector<SystemConfiguration*>::const_iterator sys = config.systemConfigurations.cbegin();
-				sys != config.systemConfigurations.cend();
-				sys++)
+			for (auto iterConfig = config.systemConfigurations.cbegin();
+				iterConfig != config.systemConfigurations.cend();
+				iterConfig++)
 			{
-				(*sys)->processParameter(strArg, strParam1);
+				(*iterConfig)->processParameter(strArgLowercase, strParam1);
 			}
 		}
 
@@ -344,7 +341,8 @@ void parseCommandLine(int nArguments, _TCHAR* arrArguments[])
  * Detects which MoCap system is active, e.g., Cortex, Kinect, etc.
  * As a fallback, a simulation system is used.
  *
- * @return  the MoCap system instance
+ * @return  a pointer to the detected MoCap system instance
+ *          or <code>NULL</code> if no system was detected
  */
 MoCapSystem* detectMoCapSystem()
 {
@@ -503,7 +501,7 @@ InteractionSystem* detectInteractionSystem()
 /**
  * Creates the NatNet server instance.
  *
- * @return <code>true</code> when server was cerated, 
+ * @return <code>true</code> when server was created, 
  *         <code>false</code> when not.
  */
 bool createServer()
@@ -576,7 +574,7 @@ bool createServer()
 /**
  * Checks if the NatNet server is running.
  *
- * @return TRUE if server is running, FALSE if not
+ * @return <code>true</code> if server is running, <code>false</code> if not
  */
 bool isServerRunning()
 {
@@ -587,7 +585,7 @@ bool isServerRunning()
 /**
  * Called from MoCap subsystems when they actively provide a new frame.
  *
- * @return TRUE if server is streaming, FALSE if not
+ * @return <code>true</code> if server is streaming, <code>false</code> if not
  */
 void signalNewFrame()
 {
@@ -723,10 +721,12 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 			pPacketOut->iMessage = NAT_PINGRESPONSE;
 			pPacketOut->nDataBytes = sizeof(pPacketOut->Data.Sender);
 			strcpy_s(pPacketOut->Data.Sender.szName, config.pMain->serverName.c_str());
-			for (int i = 0; i < 4; i++)
-			{ 
-				pPacketOut->Data.Sender.Version[i] = (unsigned char) arrServerVersion[i]; 
-			}
+
+			pPacketOut->Data.Sender.Version[0] = MOTIONSERVER_VERSION_MAJOR;
+			pPacketOut->Data.Sender.Version[1] = MOTIONSERVER_VERSION_MINOR;
+			pPacketOut->Data.Sender.Version[2] = MOTIONSERVER_VERSION_BUILD;
+			pPacketOut->Data.Sender.Version[3] = 0;
+	
 			for (int i = 0; i < 4; i++)
 			{
 				pPacketOut->Data.Sender.NatNetVersion[i] = arrServerNatNetVersion[i];
@@ -867,14 +867,32 @@ void mocapTimerThread()
 /**
  * Main program
  */
+#ifdef WIN32
 int _tmain(int nArguments, _TCHAR* arrArguments[])
+#else
+int main(int nArguments, char* arrArguments[])
+#endif
 {
 	#ifdef MONITOR_MEMORY_USAGE
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	#endif
 
-	// check for command line parameters
-	parseCommandLine(nArguments, arrArguments);
+	// parse command line parameters
+	// convert commandline arguments to array of std::string
+	std::vector<std::string> commandlineArguments;
+	for (int argIdx = 0; argIdx < nArguments; argIdx++)
+	{
+#ifdef WIN32
+		//setup converter from WChar to UTF-8
+		std::wstring argument(arrArguments[argIdx]);
+		std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+		commandlineArguments.push_back(converter.to_bytes(argument));
+#else
+		std::string argument(arrArguments[argIdx]);
+		commandlineArguments.push_back(argument);
+#endif
+	}
+	parseCommandLine(commandlineArguments);
 
 	if (config.pMain->printHelp)
 	{
@@ -888,10 +906,9 @@ int _tmain(int nArguments, _TCHAR* arrArguments[])
 		do
 		{
 			LOG_INFO("Starting MotionServer '" << config.pMain->serverName << "' v"
-				<< arrServerVersion[0] << "."
-				<< arrServerVersion[1] << "."
-				<< arrServerVersion[2] << "."
-				<< arrServerVersion[3]);
+				<< MOTIONSERVER_VERSION_MAJOR << "." 
+				<< MOTIONSERVER_VERSION_MINOR << "." 
+				<< MOTIONSERVER_VERSION_BUILD);
 
 			// create data object
 			pMocapData = new MoCapData();

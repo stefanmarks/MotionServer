@@ -108,6 +108,7 @@
     <ClInclude Include="src\SerialPort.h" />
     <ClInclude Include="src\VectorMath.h" />
     <ClInclude Include="src\Logging.h" />
+    <ClInclude Include="src\Version.h" />
     <ClInclude Include="src\XBeeDevice.h" />
     <ClInclude Include="src\XBeePacket.h" />
     <ClInclude Include="src\XBeeData.h" />
