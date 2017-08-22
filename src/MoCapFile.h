@@ -5,7 +5,7 @@
 #pragma once
 
 #include "MoCapSystem.h"
-#include "SystemConfiguration.h"
+#include "Configuration.h"
 #include "VectorMath.h"
 
 #include <fstream>
@@ -135,12 +135,12 @@ private:
 /**
  * Class for the file reader MoCap system configuration.
  */
-class MoCapFileReaderConfiguration : public SystemConfiguration
+class MoCapFileReaderConfiguration : public Configuration
 {
 public:
 	MoCapFileReaderConfiguration();
 
-	virtual bool handleParameter(int idx, const std::string& value);
+	virtual bool handleArgument(unsigned int _idx, const std::string& _value);
 
 public:
 

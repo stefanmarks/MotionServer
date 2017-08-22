@@ -6,7 +6,7 @@
 #pragma comment(lib, "Kinect10.lib")
 
 #include "MoCapSystem.h"
-#include "SystemConfiguration.h"
+#include "Configuration.h"
 
 #include <Windows.h>
 #include <NuiApi.h>
@@ -14,12 +14,12 @@
 #include <vector>
 
 
-class MoCapKinectConfiguration : public SystemConfiguration
+class MoCapKinectConfiguration : public Configuration
 {
 public:
 	MoCapKinectConfiguration();
 
-	virtual bool handleParameter(int idx, const std::string& value);
+	virtual bool handleArgument(unsigned int _idx, const std::string& _value);
 
 public:
 

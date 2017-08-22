@@ -22,7 +22,7 @@
  */
 
 MoCapCortexConfiguration::MoCapCortexConfiguration() :
-	SystemConfiguration("Cortex"),
+	Configuration("Cortex"),
 	useCortex(false),
 	remoteCortexAddress(""),
 	localCortexAddress("")
@@ -32,18 +32,18 @@ MoCapCortexConfiguration::MoCapCortexConfiguration() :
 }
 
 
-bool MoCapCortexConfiguration::handleParameter(int idx, const std::string& value)
+bool MoCapCortexConfiguration::handleArgument(unsigned int _idx, const std::string& _value)
 {
 	bool success = true;
-	switch (idx)
+	switch (_idx)
 	{
 		case 0:
-			remoteCortexAddress = value;
+			remoteCortexAddress = _value;
 			useCortex = true;
 			break;
 
 		case 1:
-			localCortexAddress = value;
+			localCortexAddress = _value;
 
 		default:
 			success = false;

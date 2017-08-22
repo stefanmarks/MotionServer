@@ -7,7 +7,7 @@
 
 // #define USE_KINECT		// build a MotionServer module that uses the Kinect
 
-// #define USE_PIECEMETA	// build a MotionServer module that reads data from the PieceMeta website
+#define USE_PIECEMETA	// build a MotionServer module that reads data from the PieceMeta website
 
 
 // #define MONITOR_MEMORY_USAGE // uncomment to monitor memory allocation/deallocation

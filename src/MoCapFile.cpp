@@ -593,20 +593,20 @@ std::string MoCapFileWriter::getTimestampFilename()
 
 
 MoCapFileReaderConfiguration::MoCapFileReaderConfiguration() :
-	SystemConfiguration("MoCap File Reader"),
+	Configuration("MoCap File Reader"),
 	filename("")
 {
 	addParameter("-readFile", "<MOT file name>", "Load a MoCap recording file");
 }
 
 
-bool MoCapFileReaderConfiguration::handleParameter(int idx, const std::string& value)
+bool MoCapFileReaderConfiguration::handleArgument(unsigned int _idx, const std::string& _value)
 {
 	bool success = true;
-	switch (idx)
+	switch (_idx)
 	{
 		case 0:
-			filename = value;
+			filename = _value;
 			break;
 
 		default:

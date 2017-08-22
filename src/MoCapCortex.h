@@ -11,16 +11,16 @@
 #pragma comment(lib, "Cortex_SDK.lib")
 
 #include "MoCapSystem.h"
-#include "SystemConfiguration.h"
+#include "Configuration.h"
 #include "Cortex.h"
 
 
-class MoCapCortexConfiguration : public SystemConfiguration
+class MoCapCortexConfiguration : public Configuration
 {
 public:
 	MoCapCortexConfiguration();
 
-	virtual bool handleParameter(int idx, const std::string& value);
+	virtual bool handleArgument(unsigned int _idx, const std::string& _value);
 
 public:
 

@@ -60,7 +60,7 @@ const int SKELETON_DATA_COUNT = sizeof(SKELETON_DATA) / sizeof(SKELETON_DATA[0])
  */
 
 MoCapKinectConfiguration::MoCapKinectConfiguration() :
-	SystemConfiguration("Kinect"),
+	Configuration("Kinect"),
 	useKinect(false),
 	seatedMode(false)
 {
@@ -69,10 +69,10 @@ MoCapKinectConfiguration::MoCapKinectConfiguration() :
 }
 
 
-bool MoCapKinectConfiguration::handleParameter(int idx, const std::string& value)
+bool MoCapKinectConfiguration::handleArgument(unsigned int _idx, const std::string& _value)
 {
 	bool success = true;
-	switch (idx)
+	switch (_idx)
 	{
 		case 0:
 			useKinect = true;

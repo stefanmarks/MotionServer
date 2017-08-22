@@ -120,7 +120,7 @@ MoCapPieceMeta::eStreamType MoCapPieceMeta::StreamConfiguration::getStreamType(c
  */
 
 MoCapPieceMetaConfiguration::MoCapPieceMetaConfiguration() :
-	SystemConfiguration("PieceMeta"),
+	Configuration("PieceMeta"),
 	usePieceMeta(false),
 	maximumFrameCount(INT_MAX),
 	listOnly(false),
@@ -134,22 +134,22 @@ MoCapPieceMetaConfiguration::MoCapPieceMetaConfiguration() :
 }
 
 
-bool MoCapPieceMetaConfiguration::handleParameter(int idx, const std::string& value)
+bool MoCapPieceMetaConfiguration::handleArgument(unsigned int _idx, const std::string& _value)
 {
 	bool success = true;
-	switch (idx)
+	switch (_idx)
 	{
 		case 0: 
-			packageFilter = value;
+			packageFilter = _value;
 			usePieceMeta = true;
 			break;
 
 		case 1:
-			channelFilters.push_back(value);
+			channelFilters.push_back(_value);
 			break;
 
 		case 2:
-			maximumFrameCount = atoi(value.c_str());
+			maximumFrameCount = atoi(_value.c_str());
 			break;
 
 		case 3:
@@ -166,8 +166,8 @@ bool MoCapPieceMetaConfiguration::handleParameter(int idx, const std::string& va
 
 
 /******************************************************************************
-* MoCapPieceMeta class
-*/
+ * MoCapPieceMeta class
+ */
 
 MoCapPieceMeta::MoCapPieceMeta(MoCapPieceMetaConfiguration configuration) :
 	configuration(configuration),

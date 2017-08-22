@@ -104,7 +104,7 @@
     <ClInclude Include="src\MoCapPieceMeta.h" />
     <ClInclude Include="src\MoCapSimulator.h" />
     <ClInclude Include="src\MoCapSystem.h" />
-    <ClInclude Include="src\SystemConfiguration.h" />
+    <ClInclude Include="src\Configuration.h" />
     <ClInclude Include="src\SerialPort.h" />
     <ClInclude Include="src\VectorMath.h" />
     <ClInclude Include="src\Logging.h" />
@@ -123,7 +123,7 @@
     <ClCompile Include="src\MoCapKinect.cpp" />
     <ClCompile Include="src\MoCapPieceMeta.cpp" />
     <ClCompile Include="src\MoCapSimulator.cpp" />
-    <ClCompile Include="src\SystemConfiguration.cpp" />
+    <ClCompile Include="src\Configuration.cpp" />
     <ClCompile Include="src\MotionServerMain.cpp" />
     <ClCompile Include="src\SerialPort.cpp" />
     <ClCompile Include="src\XBeeDevice.cpp" />

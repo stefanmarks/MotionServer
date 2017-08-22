@@ -9,7 +9,7 @@
 #ifdef USE_PIECEMETA
 
 #include "MoCapSystem.h"
-#include "SystemConfiguration.h"
+#include "Configuration.h"
 
 #include <string>
 #include <map>
@@ -18,12 +18,12 @@
 #include "json11.hpp"
 
 
-class MoCapPieceMetaConfiguration : public SystemConfiguration
+class MoCapPieceMetaConfiguration : public Configuration
 {
 public:
 	MoCapPieceMetaConfiguration();
 
-	virtual bool handleParameter(int idx, const std::string& value);
+	virtual bool handleArgument(unsigned int _idx, const std::string& _value);
 
 public:
 

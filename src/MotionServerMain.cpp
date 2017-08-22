@@ -44,7 +44,7 @@
 #include "NatNetTypes.h"
 #include "NatNetServer.h"
 #include "MoCapData.h"
-#include "SystemConfiguration.h"
+#include "Configuration.h"
 #include "Version.h"
 
 #include "Logging.h"
@@ -72,12 +72,12 @@
  * Configuration classes and variables
  */
 
-class MotionServerConfiguration : public SystemConfiguration
+class MotionServerConfiguration : public Configuration
 {
 public:
 
 	MotionServerConfiguration() :
-		SystemConfiguration("Motion Server"),
+		Configuration("Motion Server"),
 		printHelp(false),
 		serverName("MotionServer"),
 		useMulticast(false),
@@ -101,30 +101,31 @@ public:
 	}
 
 
-	virtual bool handleParameter(int idx, const std::string& value)
+	virtual bool handleArgument(unsigned int _idx, const std::string& _value)
 	{
 		bool success = true;
-		switch (idx)
+		std::istringstream strmValue(_value);
+		switch (_idx)
 		{
 			case 0: // help
 				printHelp = true;
 				break;
 
 			case 1: // Server name
-				serverName = value;
+				serverName = _value;
 				break;
 
 			case 2: // Server unicast address
-				serverAddress = value;
+				serverAddress = _value;
 				break;
 				
 			case 3: // Server multicast address
-				serverMulticastAddress = value;
+				serverMulticastAddress = _value;
 				useMulticast = true;
 				break;
 
 			case 4: // COM port number for XBee interaction controller
-				interactionControllerPort = atoi(value.c_str());
+				strmValue >> interactionControllerPort;
 				break;
 
 			case 5: // write file
@@ -132,7 +133,7 @@ public:
 				break;
 
 			case 6: // global scale factor
-				globalScale = (float) atof(value.c_str());
+				strmValue >> globalScale;
 				break;
 
 			default:
@@ -179,7 +180,7 @@ struct sConfiguration
 	MoCapPieceMetaConfiguration*  pPieceMeta;
 #endif
 
-	std::vector<SystemConfiguration*> systemConfigurations;
+	std::vector<Configuration*> systemConfigurations;
 
 
 	sConfiguration()
@@ -270,19 +271,19 @@ void printUsage()
 	const int w = 40;
 	
 	// go through all possible configurable systems
-	for (std::vector<SystemConfiguration*>::const_iterator sys = config.systemConfigurations.cbegin();
+	for (std::vector<Configuration*>::const_iterator sys = config.systemConfigurations.cbegin();
 		sys != config.systemConfigurations.cend();
 		sys++)
 	{
 		std::cout << (*sys)->getSystemName() << " options:" << std::endl;
 		// list their comand line options
-		for (std::vector<SystemConfiguration::sParameter>::const_iterator param = (*sys)->getParameters().cbegin();
-			param != (*sys)->getParameters().cend();
+		for (std::vector<Configuration::Argument>::const_iterator param = (*sys)->getArguments().cbegin();
+			param != (*sys)->getArguments().cend();
 			param++
 			)
 		{
-			std::string p = " " + (*param).name + " " + (*param).parameter;
-			std::cout << std::left << std::setw(w) << p << (*param).description << std::endl;
+			std::string p = " " + (*param).getName() + " " + (*param).getParameter();
+			std::cout << std::left << std::setw(w) << p << (*param).getDescription() << std::endl;
 		}
 	}
 }
