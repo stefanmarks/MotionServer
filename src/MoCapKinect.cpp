@@ -13,7 +13,7 @@
 #include <string>
 
 
-#define MAX_USERS         2
+#define MAX_USERS         NUI_SKELETON_MAX_TRACKED_COUNT
 #define USER_NOT_TRACKED -1
 
 
@@ -24,31 +24,33 @@ struct sKinectSkeletonData
 {
 	const char*                       czPositionName;
 	const NUI_SKELETON_POSITION_INDEX index;
+	const int boneIndex;
+	const int parentIndex;
 };
 
 
 const sKinectSkeletonData SKELETON_DATA[]
 {
-	{ "HipCentre",     NUI_SKELETON_POSITION_HIP_CENTER },
-	{ "HipRight",      NUI_SKELETON_POSITION_HIP_RIGHT },
-	{ "KneeRight",     NUI_SKELETON_POSITION_KNEE_RIGHT },
-	{ "AnkleRight",    NUI_SKELETON_POSITION_ANKLE_RIGHT },
-	{ "FootRight",     NUI_SKELETON_POSITION_FOOT_RIGHT },
-	{ "HipLeft",       NUI_SKELETON_POSITION_HIP_LEFT },
-	{ "KneeLeft",      NUI_SKELETON_POSITION_KNEE_LEFT },
-	{ "AnkleLeft",     NUI_SKELETON_POSITION_ANKLE_LEFT },
-	{ "FootLeft",      NUI_SKELETON_POSITION_FOOT_LEFT },
-	{ "Spine",         NUI_SKELETON_POSITION_SPINE },
-	{ "ShoulderCentre",NUI_SKELETON_POSITION_SHOULDER_CENTER },
-	{ "Head",          NUI_SKELETON_POSITION_HEAD },
-	{ "ShoulderRight", NUI_SKELETON_POSITION_SHOULDER_RIGHT },
-	{ "ElbowRight",    NUI_SKELETON_POSITION_ELBOW_RIGHT },
-	{ "WristRight",    NUI_SKELETON_POSITION_WRIST_RIGHT },
-	{ "HandRight",     NUI_SKELETON_POSITION_HAND_RIGHT },
-	{ "ShoulderLeft",  NUI_SKELETON_POSITION_SHOULDER_LEFT },
-	{ "ElbowLeft",     NUI_SKELETON_POSITION_ELBOW_LEFT },
-	{ "WristLeft",     NUI_SKELETON_POSITION_WRIST_LEFT },
-	{ "HandLeft",      NUI_SKELETON_POSITION_HAND_LEFT },
+	{ "HipCentre",     NUI_SKELETON_POSITION_HIP_CENTER, 0,-1},
+	{ "Spine",         NUI_SKELETON_POSITION_SPINE, 1, 0},
+	{ "HipLeft",       NUI_SKELETON_POSITION_HIP_LEFT, 2, 0},
+	{ "HipRight",      NUI_SKELETON_POSITION_HIP_RIGHT, 3, 0},
+	{ "ShoulderCentre",NUI_SKELETON_POSITION_SHOULDER_CENTER, 4, 1},
+	{ "KneeLeft",      NUI_SKELETON_POSITION_KNEE_LEFT, 5, 2},
+	{ "KneeRight",     NUI_SKELETON_POSITION_KNEE_RIGHT, 6, 3},
+	{ "ShoulderLeft",  NUI_SKELETON_POSITION_SHOULDER_LEFT, 7, 4},
+	{ "Head",          NUI_SKELETON_POSITION_HEAD, 8, 4},
+	{ "ShoulderRight", NUI_SKELETON_POSITION_SHOULDER_RIGHT, 9, 4},
+	{ "AnkleLeft",     NUI_SKELETON_POSITION_ANKLE_LEFT, 10, 5},
+	{ "AnkleRight",    NUI_SKELETON_POSITION_ANKLE_RIGHT, 11, 6},
+	{ "ElbowLeft",     NUI_SKELETON_POSITION_ELBOW_LEFT, 12, 7},
+	{ "ElbowRight",    NUI_SKELETON_POSITION_ELBOW_RIGHT, 13, 9},
+	{ "FootLeft",      NUI_SKELETON_POSITION_FOOT_LEFT, 14, 10},
+	{ "FootRight",     NUI_SKELETON_POSITION_FOOT_RIGHT, 15, 11},
+	{ "WristLeft",     NUI_SKELETON_POSITION_WRIST_LEFT, 16, 12},
+	{ "WristRight",    NUI_SKELETON_POSITION_WRIST_RIGHT, 17, 13},
+	{ "HandLeft",      NUI_SKELETON_POSITION_HAND_LEFT, 18, 16},
+	{ "HandRight",     NUI_SKELETON_POSITION_HAND_RIGHT, 19, 17},
 };
 
 const int SKELETON_DATA_COUNT = sizeof(SKELETON_DATA) / sizeof(SKELETON_DATA[0]);
@@ -220,20 +222,60 @@ bool MoCapKinect::getSceneDescription(MoCapData& refData)
 			pMarkerDesc->szMarkerNames[m] = _strdup(SKELETON_DATA[m].czPositionName);
 		}
 
+
 		// add to description list
 		refData.description.arrDataDescriptions[descrIdx].type = Descriptor_MarkerSet;
 		refData.description.arrDataDescriptions[descrIdx].Data.MarkerSetDescription = pMarkerDesc;
 		descrIdx++;
-
-		refData.description.nDataDescriptions = descrIdx;
 	}
+
+	for (int nRigid = 0; nRigid < MAX_USERS; nRigid++){
+		sSkeletonDescription* pSkeletonDesc = new sSkeletonDescription();
+		sSkeletonData& skData = refData.frame.Skeletons[nRigid];
+
+		sprintf_s(pSkeletonDesc->szName, sizeof(pSkeletonDesc->szName), "User%d Rigid", nRigid + 1);
+		
+		pSkeletonDesc->skeletonID = nRigid;
+		skData.skeletonID = pSkeletonDesc->skeletonID;
+
+		pSkeletonDesc->nRigidBodies = SKELETON_DATA_COUNT;
+		skData.nRigidBodies = pSkeletonDesc->nRigidBodies;
+
+		skData.RigidBodyData = new sRigidBodyData[pSkeletonDesc->nRigidBodies];
+
+		for (int rbodies = 0; rbodies < pSkeletonDesc->nRigidBodies; rbodies++) {
+			readRigidBodyDescription(pSkeletonDesc->RigidBodies[rbodies], skData.RigidBodyData[rbodies], rbodies);
+		}
+
+		refData.description.arrDataDescriptions[descrIdx].type = Descriptor_Skeleton;
+		refData.description.arrDataDescriptions[descrIdx].Data.SkeletonDescription = pSkeletonDesc;
+		descrIdx++;
+	}
+
+
+	refData.description.nDataDescriptions = descrIdx;
 
 	// pre-fill in frame data
 	refData.frame.nMarkerSets = MAX_USERS;
+	refData.frame.nSkeletons = MAX_USERS;
 
 	return true;
 }
 
+void MoCapKinect::readRigidBodyDescription(sRigidBodyDescription &descr, sRigidBodyData& data, int rbodies)
+{
+	descr.ID = rbodies;
+	strcpy_s(descr.szName, sizeof(descr.szName), SKELETON_DATA[rbodies].czPositionName);
+	descr.parentID = SKELETON_DATA[rbodies].parentIndex;
+	descr.offsetx = 0; descr.offsety = 0; descr.offsetz = 0;
+
+	data.ID = descr.ID;
+	data.nMarkers = 0;
+	data.Markers = NULL;
+	data.MarkerIDs = NULL;
+	data.MarkerSizes = NULL;
+	data.MeanError = 1;
+}
 
 bool MoCapKinect::processCommand(const std::string& strCommand)
 {
@@ -280,7 +322,12 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 			float yOffset = refSkeletonFrame.vFloorClipPlane.w;
 
 			const NUI_SKELETON_DATA& skeleton = refSkeletonFrame.SkeletonData[userSkeletonIdx[userIdx]];
+
+			NUI_SKELETON_BONE_ORIENTATION boneOrientations[NUI_SKELETON_POSITION_COUNT];
+			NuiSkeletonCalculateBoneOrientations(&skeleton, boneOrientations);
+
 			sMarkerSetData&          msData   = refData.frame.MocapData[userIdx];
+			sSkeletonData&          skeleData = refData.frame.Skeletons[userIdx];
 
 			//LOG_INFO_START("Kinect skeleton " << firstUser <<
 			//	"\tx:" << skeleton.Position.x << "\ty:" << skeleton.Position.y << "\tz:" << skeleton.Position.z << "\t");
@@ -302,6 +349,9 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 					msMarker[0] = point.x;
 					msMarker[1] = point.y + yOffset; // TODO: see above re transformation
 					msMarker[2] = point.z;
+					skeleData.RigidBodyData[mIdx].x = point.x;
+					skeleData.RigidBodyData[mIdx].y = point.y + yOffset;
+					skeleData.RigidBodyData[mIdx].z = point.z;
 					break;
 
 				default:
@@ -310,6 +360,20 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 					msMarker[1] = 0;
 					msMarker[2] = 0;
 					break;
+				}
+			}
+
+			if (skeleton.eTrackingState == NUI_SKELETON_TRACKED) {
+				for (int j = 0; j < NUI_SKELETON_POSITION_COUNT; j++) {
+						NUI_SKELETON_BONE_ORIENTATION & orientation = boneOrientations[j];
+						sRigidBodyData&    rigidData = skeleData.RigidBodyData[j];
+
+						rigidData.qw = orientation.hierarchicalRotation.rotationQuaternion.w;
+						rigidData.qx = orientation.hierarchicalRotation.rotationQuaternion.x;
+						rigidData.qy = orientation.hierarchicalRotation.rotationQuaternion.y;
+						rigidData.qz = orientation.hierarchicalRotation.rotationQuaternion.z;
+						skeleData.RigidBodyData[j].params = 0x01;
+
 				}
 			}
 			//LOG_INFO_END();
@@ -325,6 +389,21 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 				msMarker[0] = 0;
 				msMarker[1] = 0;
 				msMarker[2] = 0;
+			}
+
+			sSkeletonData& skeleData = refData.frame.Skeletons[userIdx];
+
+			for (int rIdx = 0; rIdx < skeleData.nRigidBodies; rIdx++)
+			{
+				skeleData.RigidBodyData[rIdx].qw = 1;
+				skeleData.RigidBodyData[rIdx].qx = 0;
+				skeleData.RigidBodyData[rIdx].qy = 0;
+				skeleData.RigidBodyData[rIdx].qz = 0;
+				skeleData.RigidBodyData[rIdx].x = 0;
+				skeleData.RigidBodyData[rIdx].y = 0;
+				skeleData.RigidBodyData[rIdx].z = 0;
+				skeleData.RigidBodyData[rIdx].params = 0x00;
+
 			}
 		}
 	}
