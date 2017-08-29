@@ -367,13 +367,11 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 				for (int j = 0; j < NUI_SKELETON_POSITION_COUNT; j++) {
 						NUI_SKELETON_BONE_ORIENTATION & orientation = boneOrientations[j];
 						sRigidBodyData&    rigidData = skeleData.RigidBodyData[j];
-
 						rigidData.qw = orientation.hierarchicalRotation.rotationQuaternion.w;
 						rigidData.qx = orientation.hierarchicalRotation.rotationQuaternion.x;
 						rigidData.qy = orientation.hierarchicalRotation.rotationQuaternion.y;
 						rigidData.qz = orientation.hierarchicalRotation.rotationQuaternion.z;
-						skeleData.RigidBodyData[j].params = 0x01;
-
+						rigidData.params = 0x01;
 				}
 			}
 			//LOG_INFO_END();
@@ -392,18 +390,17 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 			}
 
 			sSkeletonData& skeleData = refData.frame.Skeletons[userIdx];
-
 			for (int rIdx = 0; rIdx < skeleData.nRigidBodies; rIdx++)
 			{
-				skeleData.RigidBodyData[rIdx].qw = 1;
-				skeleData.RigidBodyData[rIdx].qx = 0;
-				skeleData.RigidBodyData[rIdx].qy = 0;
-				skeleData.RigidBodyData[rIdx].qz = 0;
-				skeleData.RigidBodyData[rIdx].x = 0;
-				skeleData.RigidBodyData[rIdx].y = 0;
-				skeleData.RigidBodyData[rIdx].z = 0;
-				skeleData.RigidBodyData[rIdx].params = 0x00;
-
+				sRigidBodyData& rigidData = skeleData.RigidBodyData[rIdx];
+				rigidData.qw = 1;
+				rigidData.qx = 0;
+				rigidData.qy = 0;
+				rigidData.qz = 0;
+				rigidData.x = 0;
+				rigidData.y = 0;
+				rigidData.z = 0;
+				rigidData.params = 0x00;
 			}
 		}
 	}
