@@ -97,7 +97,7 @@ MoCapCortex::MoCapCortex(MoCapCortexConfiguration configuration) :
 	configuration(configuration),
 	initialised(false),
 	running(true),
-	pCortexInfo(NULL),
+	pCortexInfo(nullptr),
 	unitScaleFactor(1.0f),
 	updateRate(100.0f),
 	handleUnknownMarkers(false)
@@ -126,7 +126,7 @@ bool MoCapCortex::initialise()
 		Cortex_SetDataHandlerFunc(callbackMoCapCortexDataHandler);
 
 		if (Cortex_Initialize(
-				(char*) (configuration.localCortexAddress.empty() ? NULL : configuration.localCortexAddress.c_str()),
+				(char*) (configuration.localCortexAddress.empty() ? nullptr : configuration.localCortexAddress.c_str()),
 				(char*)  configuration.remoteCortexAddress.c_str()
 			) == RC_Okay)
 		{
@@ -146,19 +146,19 @@ bool MoCapCortex::initialise()
 
 				int portHost, portHostMulticast;
 				Cortex_GetPortNumbers(
-					NULL, //int* TalkToHostPort,
+					nullptr, //int* TalkToHostPort,
 					&portHost,
 					&portHostMulticast,
-					NULL, //int *TalkToClientsRequestPort,
-					NULL, //int *TalkToClientsMulticastPort,
-					NULL  //int *ClientsMulticastPort);
+					nullptr, //int *TalkToClientsRequestPort,
+					nullptr, //int *TalkToClientsMulticastPort,
+					nullptr  //int *ClientsMulticastPort);
 				);
 				LOG_INFO("Host port: "           << portHost);
 				LOG_INFO("Host Multicast port: " << portHostMulticast);
 
 				// determine unit conversion factor
 				float unitToMillimeter = 1;
-				void *pResponse = NULL;
+				void *pResponse = nullptr;
 				int  iResponseSize = 0;
 				if (Cortex_Request("GetConversionToMillimeters", &pResponse, &iResponseSize) == RC_Okay)
 				{
@@ -183,7 +183,7 @@ bool MoCapCortex::initialise()
 			{
 				LOG_ERROR("Could not communicate with Cortex server");
 				delete pCortexInfo;
-				pCortexInfo = NULL;
+				pCortexInfo = nullptr;
 				Cortex_Exit();
 			}
 		}
@@ -212,7 +212,7 @@ bool MoCapCortex::isRunning()
 
 void MoCapCortex::setRunning(bool running)
 {
-	void  *pResponse = NULL;
+	void  *pResponse = nullptr;
 	int   iResponseSize = 0;
 	char* czCommand = running ? "LiveMode" : "Pause";
 	if (Cortex_Request(czCommand, &pResponse, &iResponseSize) == RC_Okay)
@@ -237,7 +237,7 @@ bool MoCapCortex::getSceneDescription(MoCapData& refData)
 		LOG_INFO("Requesting scene description")
 		sBodyDefs* pBodyDefs = Cortex_GetBodyDefs();
 
-		if (pBodyDefs != NULL)
+		if (pBodyDefs != nullptr)
 		{
 			convertCortexDescriptionToNatNet(*pBodyDefs, refData.description, refData.frame);
 			Cortex_FreeBodyDefs(pBodyDefs);
@@ -262,7 +262,7 @@ bool MoCapCortex::getFrameData(MoCapData& refData)
 		// only request data from Cortex when not getting it via callback
 		sFrameOfData* pFrame = Cortex_GetCurrentFrame();
 
-		if (pFrame != NULL)
+		if (pFrame != nullptr)
 		{
 			if (!convertCortexFrameToNatNet(*pFrame, refData.frame))
 			{
@@ -324,13 +324,13 @@ bool MoCapCortex::deinitialise()
 {
 	if (initialised)
 	{
-		Cortex_SetDataHandlerFunc(NULL);
+		Cortex_SetDataHandlerFunc(nullptr);
 
 		delete pCortexInfo;
-		pCortexInfo = NULL;
+		pCortexInfo = nullptr;
 		Cortex_Exit();
 
-		Cortex_SetErrorMsgHandlerFunc(NULL);
+		Cortex_SetErrorMsgHandlerFunc(nullptr);
 
 		LOG_INFO("Deinitialised");
 
@@ -395,18 +395,18 @@ void MoCapCortex::convertCortexDescriptionToNatNet(sBodyDefs& refCortex, sDataDe
 			strncpy_s(pRigidBodyDescr->szName, bodyDef.szName, sizeof(pRigidBodyDescr->szName)); // rigid body name
 			pRigidBodyDescr->ID = iBodyIdx; // rigid body ID = actor ID
 			pRigidBodyDescr->parentID = -1; // no parent
-			pRigidBodyDescr->offsetx = 0;   // the offset does not exist in Cortex data
-			pRigidBodyDescr->offsety = 0;
-			pRigidBodyDescr->offsetz = 0;
+			pRigidBodyDescr->offsetx  = 0;   // the offset does not exist in Cortex data
+			pRigidBodyDescr->offsety  = 0;
+			pRigidBodyDescr->offsetz  = 0;
 
 			// pre-fill rigid body frame data structure
 			sRigidBodyData& refRigidBodyData = refFrame.RigidBodies[idxRigidBody];
-			refRigidBodyData.ID = iBodyIdx;
-			refRigidBodyData.nMarkers = 0;
-			refRigidBodyData.Markers = NULL;
-			refRigidBodyData.MarkerIDs = NULL;
-			refRigidBodyData.MarkerSizes = NULL;
-			refRigidBodyData.MeanError = 0;
+			refRigidBodyData.ID          = pRigidBodyDescr->ID;
+			refRigidBodyData.nMarkers    = 0;
+			refRigidBodyData.Markers     = nullptr;
+			refRigidBodyData.MarkerIDs   = nullptr;
+			refRigidBodyData.MarkerSizes = nullptr;
+			refRigidBodyData.MeanError   = 0;
 
 			// add to scene description
 			refDescr.arrDataDescriptions[idxDataBlock].type = Descriptor_RigidBody;
@@ -440,12 +440,12 @@ void MoCapCortex::convertCortexDescriptionToNatNet(sBodyDefs& refCortex, sDataDe
 
 				// pre-fill skeleton segment frame data structure
 				sRigidBodyData&  refRigidBodyData = refSkeletonData.RigidBodyData[sIdx];
-				refRigidBodyData.ID = sIdx;
-				refRigidBodyData.nMarkers = 0;
-				refRigidBodyData.Markers = NULL;
-				refRigidBodyData.MarkerIDs = NULL;
-				refRigidBodyData.MarkerSizes = NULL;
-				refRigidBodyData.MeanError = 0;
+				refRigidBodyData.ID          = refRigidBodyDescr.ID;
+				refRigidBodyData.nMarkers    = 0;
+				refRigidBodyData.Markers     = nullptr;
+				refRigidBodyData.MarkerIDs   = nullptr;
+				refRigidBodyData.MarkerSizes = nullptr;
+				refRigidBodyData.MeanError   = 0;
 			}
 			// add to description
 			refDescr.arrDataDescriptions[idxDataBlock].type = Descriptor_Skeleton;
@@ -569,7 +569,7 @@ void MoCapCortex::convertCortexSegmentToNatNet(double refCortex[], sRigidBodyDat
 		Quaternion rotZ(0, 0, 1, (float)RADIANS(refCortex[5])); // rotZ
 		rot.mult(rotZ).mult(rotY).mult(rotX);
 
-		refNatNet.params    = 0x01; // tracking OK
+		refNatNet.params    = STATUS_TRACKED;
 		refNatNet.MeanError = (refCortex[0] < XEMPTY) ?
 		                        (float)refCortex[6] * unitScaleFactor : // ATTENTION: Abusing mean error for bone length
 		                        0.0f;
@@ -577,7 +577,7 @@ void MoCapCortex::convertCortexSegmentToNatNet(double refCortex[], sRigidBodyDat
 	else
 	{
 		// segment data not available -> use origin and neutral pose
-		refNatNet.params    = 0x00; // tracking not OK
+		refNatNet.params    = STATUS_NOT_TRACKED;
 		refNatNet.MeanError = 0.0f; // no "bone length"
 	}
 

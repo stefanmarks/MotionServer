@@ -215,7 +215,7 @@ struct sConfiguration
  */
 
 // Server variables
-NatNetServer* pServer          = NULL;
+NatNetServer* pServer          = nullptr;
 std::mutex    mtxServer;
 bool          serverStarting   = true;
 bool          serverRunning    = false;
@@ -343,13 +343,13 @@ void parseCommandLine(const std::vector<std::string>& arguments)
  * As a fallback, a simulation system is used.
  *
  * @return  a pointer to the detected MoCap system instance
- *          or <code>NULL</code> if no system was detected
+ *          or <code>nullptr</code> if no system was detected
  */
 MoCapSystem* detectMoCapSystem()
 {
-	MoCapSystem* pSystem = NULL;
+	MoCapSystem* pSystem = nullptr;
 
-	if (pSystem == NULL && !config.pFileReader->filename.empty())
+	if (pSystem == nullptr && !config.pFileReader->filename.empty())
 	{
 		// query data file
 		MoCapFileReader* pReader = new MoCapFileReader(*config.pFileReader);
@@ -367,7 +367,7 @@ MoCapSystem* detectMoCapSystem()
 	}
 
 #ifdef USE_CORTEX
-	if (pSystem == NULL && config.pCortex->useCortex)
+	if (pSystem == nullptr && config.pCortex->useCortex)
 	{
 		// query Cortex
 		LOG_INFO("Querying Cortex Server");
@@ -387,7 +387,7 @@ MoCapSystem* detectMoCapSystem()
 #endif
 
 #ifdef USE_KINECT
-	if (pSystem == NULL && config.pKinect->useKinect)
+	if (pSystem == nullptr && config.pKinect->useKinect)
 	{
 		// query Kinect sensors
 		LOG_INFO("Querying Kinect sensors");
@@ -408,7 +408,7 @@ MoCapSystem* detectMoCapSystem()
 #endif
 
 #ifdef USE_PIECEMETA
-	if (pSystem == NULL && config.pPieceMeta->usePieceMeta)
+	if (pSystem == nullptr && config.pPieceMeta->usePieceMeta)
 	{
 		MoCapPieceMeta* pPieceMeta = new MoCapPieceMeta(*config.pPieceMeta);
 		if (config.pPieceMeta->listOnly)
@@ -443,11 +443,11 @@ MoCapSystem* detectMoCapSystem()
  * Detects the XBee interaction system controller.
  *
  * @return  the controller instance
- *          (or <code>NULL</code> if no controller was found)
+ *          (or <code>nullptr</code> if no controller was found)
  */
 InteractionSystem* detectInteractionSystem()
 {
-	InteractionSystem* pSystem = NULL;
+	InteractionSystem* pSystem = nullptr;
 	
 	if (config.pMain->interactionControllerPort > 255)
 	{
@@ -485,7 +485,7 @@ InteractionSystem* detectInteractionSystem()
 			{
 				pSystem->deinitialise();
 				delete pSystem;
-				pSystem = NULL;
+				pSystem = nullptr;
 			}
 		}
 	}
@@ -579,7 +579,7 @@ bool createServer()
  */
 bool isServerRunning()
 {
-	return (pServer != NULL);
+	return (pServer != nullptr);
 }
 
 
@@ -664,17 +664,17 @@ bool destroyServer()
 		mtxServer.lock();
 		LOG_INFO("Shutting down server");
 		
-		pServer->SetMessageResponseCallback(NULL);
+		pServer->SetMessageResponseCallback(nullptr);
 		pServer->Uninitialize();
-		pServer->SetErrorMessageCallback(NULL);
+		pServer->SetErrorMessageCallback(nullptr);
 		
 		delete pServer;
-		pServer = NULL;
+		pServer = nullptr;
 
 		LOG_INFO("Server shut down");
 		mtxServer.unlock();
 	}
-	return (pServer == NULL);
+	return (pServer == nullptr);
 }
 
 
@@ -921,7 +921,7 @@ int main(int nArguments, char* arrArguments[])
 			// e.g., PieceMeta -listOnly
 			if (!serverStarting) break;
 
-			if (pMoCapSystem == NULL)
+			if (pMoCapSystem == nullptr)
 			{
 				// fallback: use simulator
 				LOG_INFO("No active motion capture systems found > Simulating");
@@ -1055,7 +1055,7 @@ int main(int nArguments, char* arrArguments[])
 				LOG_INFO("Stopping MotionServer");
 
 				// stop responding to packets
-				pServer->SetMessageResponseCallback(NULL);
+				pServer->SetMessageResponseCallback(nullptr);
 
 				// wait for streaming thread
 				streamingThread.join();
@@ -1069,7 +1069,7 @@ int main(int nArguments, char* arrArguments[])
 			{
 				pInteractionSystem->deinitialise();
 				delete pInteractionSystem;
-				pInteractionSystem = NULL;
+				pInteractionSystem = nullptr;
 			}
 				
 			// clean up structures and objects
@@ -1077,20 +1077,20 @@ int main(int nArguments, char* arrArguments[])
 			if (pMoCapFileWriter)
 			{
 				delete pMoCapFileWriter;
-				pMoCapFileWriter = NULL;
+				pMoCapFileWriter = nullptr;
 			}
 
 			if (pMoCapSystem)
 			{
 				pMoCapSystem->deinitialise();
 				delete pMoCapSystem;
-				pMoCapSystem = NULL;
+				pMoCapSystem = nullptr;
 			}
 
 			if (pMocapData)
 			{
 				delete pMocapData;
-				pMocapData = NULL;
+				pMocapData = nullptr;
 			}
 			mtxMoCap.unlock();
 

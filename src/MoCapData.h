@@ -7,6 +7,11 @@
 
 #include "NatNetTypes.h"
 
+// constants for the RigidBody.param field
+#define STATUS_NOT_TRACKED ((short) 0x00)
+#define STATUS_TRACKED     ((short) 0x01)
+
+
 class MoCapData
 {
 public:

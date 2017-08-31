@@ -1,4 +1,5 @@
 #include "Logging.h"
+#include "MoCapData.h"
 
 #include <ios>
 #include <iomanip>
@@ -153,7 +154,7 @@ void printFrameOfData(std::ostream& refOutput, sFrameOfMocapData& refData)
 		sRigidBodyData& refRigidBody = refData.RigidBodies[rbIdx];
 		refOutput << "RigidBody #" << rbIdx 
 			<< " (ID " << refRigidBody.ID 
-			<< ", " << (((refRigidBody.params & 0x01) != 0) ? "Tracked" : "Not Tracked")
+			<< ", " << (((refRigidBody.params & STATUS_TRACKED) != 0) ? "Tracked" : "Not Tracked")
 			<< "):" << std::endl;
 		for (int mIdx = 0; mIdx < refRigidBody.nMarkers; mIdx++)
 		{
@@ -176,7 +177,7 @@ void printFrameOfData(std::ostream& refOutput, sFrameOfMocapData& refData)
 		{
 			sRigidBodyData& refRigidBody = refSkeleton.RigidBodyData[rbIdx];
 			refOutput << "\tRB #" << refRigidBody.ID 
-				<< " (" << (((refRigidBody.params & 0x01) != 0) ? "Tracked" : "Not Tracked")
+				<< " (" << (((refRigidBody.params & STATUS_TRACKED) != 0) ? "Tracked" : "Not Tracked")
 				<< ", Length: " << refRigidBody.MeanError
 				<< "):" << std::endl
 				<< "\t\tPosition:    X=" << refRigidBody.x << ", Y=" << refRigidBody.y << ", Z=" << refRigidBody.z << std::endl 

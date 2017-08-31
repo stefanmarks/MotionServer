@@ -280,7 +280,7 @@ bool MoCapSimulator::getFrameData(MoCapData& refData)
 
 		rbData.nMarkers  = 0;
 		rbData.MeanError = 0;
-		rbData.params    = trackingLost ? 0x00 : 0x01; // tracking OK
+		rbData.params    = trackingLost ? STATUS_NOT_TRACKED : STATUS_TRACKED;
 	}
 
 	return true;
