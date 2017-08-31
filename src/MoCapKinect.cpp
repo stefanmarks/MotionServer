@@ -13,7 +13,8 @@
 #include <string>
 
 
-#define MAX_USERS         NUI_SKELETON_MAX_TRACKED_COUNT
+
+#define MAX_USERS        NUI_SKELETON_MAX_TRACKED_COUNT
 #define USER_NOT_TRACKED -1
 
 
@@ -101,7 +102,7 @@ MoCapKinect::MoCapKinect(MoCapKinectConfiguration configuration) :
 	configuration(configuration),
 	initialised(false),
 	running(true),
-	pNuiSensor(NULL)
+	pNuiSensor(nullptr)
 {
 	// assume no tracked users in the beginning
 	for (int userIdx = 0; userIdx < MAX_USERS; userIdx++)
@@ -135,7 +136,7 @@ bool MoCapKinect::initialise()
 		{
 			// initialised sensor > enable skeletal tracking
 			LOG_INFO("Initialised Kinect sensor");
-			kinectHandle = CreateEventW(NULL, TRUE, FALSE, NULL);
+			kinectHandle = CreateEventW(nullptr, TRUE, FALSE, nullptr);
 			result = pNuiSensor->NuiSkeletonTrackingEnable(kinectHandle,
 					configuration.seatedMode ? NUI_SKELETON_TRACKING_FLAG_ENABLE_SEATED_SUPPORT : 0
 				);
@@ -371,7 +372,7 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 						rigidData.qx = orientation.hierarchicalRotation.rotationQuaternion.x;
 						rigidData.qy = orientation.hierarchicalRotation.rotationQuaternion.y;
 						rigidData.qz = orientation.hierarchicalRotation.rotationQuaternion.z;
-						rigidData.params = 0x01;
+						rigidData.params = STATUS_TRACKED;
 				}
 			}
 			//LOG_INFO_END();
@@ -400,7 +401,7 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 				rigidData.x = 0;
 				rigidData.y = 0;
 				rigidData.z = 0;
-				rigidData.params = 0x00;
+				rigidData.params = STATUS_NOT_TRACKED;
 			}
 		}
 	}
@@ -417,6 +418,7 @@ void MoCapKinect::checkUserLost(const NUI_SKELETON_FRAME& refSkeletonFrame)
 			if (skeleton.eTrackingState == NUI_SKELETON_NOT_TRACKED)
 			{
 				userSkeletonIdx[userIdx] = USER_NOT_TRACKED;
+				LOG_INFO("Lost user " << userIdx);
 			}
 		}
 	}
@@ -435,14 +437,15 @@ void MoCapKinect::checkUserFound(const NUI_SKELETON_FRAME& refSkeletonFrame)
 			if (userSkeletonIdx[0] < 0 && skeletonIdx != userSkeletonIdx[1])
 			{
 				userSkeletonIdx[0] = skeletonIdx;
+				LOG_INFO("Found user 0 (skeleton Idx " << skeletonIdx << ")");
 			}
 			else if (userSkeletonIdx[1] < 0 && skeletonIdx != userSkeletonIdx[0])
 			{
 				userSkeletonIdx[1] = skeletonIdx;
+				LOG_INFO("Found user 1 (skeleton Idx " << skeletonIdx << ")");
 			}
 		}
 	}
-
 }
 
 
@@ -462,10 +465,10 @@ bool MoCapKinect::deinitialise()
 
 void MoCapKinect::cleanup()
 {
-	if (pNuiSensor != NULL)
+	if (pNuiSensor != nullptr)
 	{
 		pNuiSensor->Release();
-		pNuiSensor = NULL;
+		pNuiSensor = nullptr;
 	}
 
 	NuiShutdown();
