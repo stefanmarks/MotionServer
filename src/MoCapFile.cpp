@@ -227,6 +227,7 @@ void MoCapFileWriter::writeForcePlateDescription(const sForcePlateDescription& d
 void MoCapFileWriter::writeFrameDataColumnNames(const MoCapData& refData)
 {
 	writeColumnName("#frame"); // '#': when reading, consider this line a comment
+	writeColumnName("timestamp");
 	writeColumnName("latency");
 	
 	// markersets
