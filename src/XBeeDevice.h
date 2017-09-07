@@ -130,7 +130,7 @@ public:
 	/**
 	 * Receives an unspecific packet from an XBee device.
 	 *
-	 * @return received packet or <code>NULL</code> if an error occured
+	 * @return received packet or \c nullptr if an error occured
 	 */
 	std::unique_ptr<XBeePacket_Receive> receive();
 

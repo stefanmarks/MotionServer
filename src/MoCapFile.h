@@ -114,7 +114,7 @@ private:
 	void write(float fValue);
 	void write(const char* czString);
 	void writeTag(const char* czString);
-	void writeColumnName(const char* czString1, const char* czString2 = NULL, const char* czString3 = NULL);
+	void writeColumnName(const char* czString1, const char* czString2 = nullptr, const char* czString3 = nullptr);
 	void writeColumnNames(const char* czString1, const char* czString2, int count, ...);
 	void nextLine();
 

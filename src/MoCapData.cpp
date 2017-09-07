@@ -70,7 +70,7 @@ void MoCapData::applyScale(float scale)
 
 sMarkerSetDescription* MoCapData::findMarkerSetDescription(const sMarkerSetData& refMarkerSetData) const
 {
-	sMarkerSetDescription* pResult = NULL;
+	sMarkerSetDescription* pResult = nullptr;
 	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
 	{
 		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
@@ -90,7 +90,7 @@ sMarkerSetDescription* MoCapData::findMarkerSetDescription(const sMarkerSetData&
 
 sRigidBodyDescription* MoCapData::findRigidBodyDescription(const sRigidBodyData& refRigidBodyData) const
 {
-	sRigidBodyDescription* pResult = NULL;
+	sRigidBodyDescription* pResult = nullptr;
 	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
 	{
 		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
@@ -110,7 +110,7 @@ sRigidBodyDescription* MoCapData::findRigidBodyDescription(const sRigidBodyData&
 
 sSkeletonDescription* MoCapData::findSkeletonDescription(const sSkeletonData& refSkeletonData) const
 {
-	sSkeletonDescription* pResult = NULL;
+	sSkeletonDescription* pResult = nullptr;
 	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
 	{
 		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
@@ -130,7 +130,7 @@ sSkeletonDescription* MoCapData::findSkeletonDescription(const sSkeletonData& re
 
 sForcePlateDescription* MoCapData::findForcePlateDescription(const sForcePlateData& refForcePlateData) const
 {
-	sForcePlateDescription* pResult = NULL;
+	sForcePlateDescription* pResult = nullptr;
 	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
 	{
 		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
@@ -188,25 +188,25 @@ void MoCapData::freeNatNetDescription()
 			case Descriptor_MarkerSet:
 				// Marker set -> release array of marker names
 				freeNatNetMarkerSetDescription(descr.Data.MarkerSetDescription);
-				descr.Data.MarkerSetDescription = NULL;
+				descr.Data.MarkerSetDescription = nullptr;
 				break;
 
 			case Descriptor_RigidBody:
 				// Rigid body -> release data
 				freeNatNetRigidBodyDescription(descr.Data.RigidBodyDescription);
-				descr.Data.RigidBodyDescription = NULL;
+				descr.Data.RigidBodyDescription = nullptr;
 				break;
 
 			case Descriptor_Skeleton:
 				// Skeleton -> release data
 				freeNatNetSkeletonDescription(descr.Data.SkeletonDescription);
-				descr.Data.SkeletonDescription = NULL;
+				descr.Data.SkeletonDescription = nullptr;
 				break;
 
 			case Descriptor_ForcePlate:
 				// Force plate -> release data
 				freeNatNetForcePlateDescription(descr.Data.ForcePlateDescription);
-				descr.Data.ForcePlateDescription = NULL;
+				descr.Data.ForcePlateDescription = nullptr;
 				break;
 
 			default:
@@ -225,12 +225,12 @@ void MoCapData::freeNatNetMarkerSetDescription(sMarkerSetDescription* pMarkerSet
 	for (int mIdx = 0; mIdx < pMarkerSet->nMarkers; mIdx++)
 	{
 		delete[] pMarkerSet->szMarkerNames[mIdx];
-		pMarkerSet->szMarkerNames[mIdx] = NULL;
+		pMarkerSet->szMarkerNames[mIdx] = nullptr;
 	}
 	
 	// release marker names array
 	delete[] pMarkerSet->szMarkerNames;
-	pMarkerSet->szMarkerNames = NULL;
+	pMarkerSet->szMarkerNames = nullptr;
 	
 	// release structure
 	delete pMarkerSet;
@@ -297,7 +297,7 @@ void MoCapData::freeNatNetFrameData()
 void MoCapData::freeNatNetMarkerSetData(sMarkerSetData& refMarkerSetData)
 {
 	delete[] refMarkerSetData.Markers;
-	refMarkerSetData.Markers = NULL;
+	refMarkerSetData.Markers = nullptr;
 	refMarkerSetData.nMarkers = 0;
 }
 
@@ -305,11 +305,11 @@ void MoCapData::freeNatNetMarkerSetData(sMarkerSetData& refMarkerSetData)
 void MoCapData::freeNatNetRigidBodySetData(sRigidBodyData& refBodySetData)
 {
 	delete[] refBodySetData.Markers;
-	refBodySetData.Markers = NULL;
+	refBodySetData.Markers = nullptr;
 	delete[] refBodySetData.MarkerIDs;
-	refBodySetData.MarkerIDs = NULL;
+	refBodySetData.MarkerIDs = nullptr;
 	delete[] refBodySetData.MarkerSizes;
-	refBodySetData.MarkerSizes = NULL;
+	refBodySetData.MarkerSizes = nullptr;
 	refBodySetData.nMarkers = 0;
 }
 
@@ -321,7 +321,7 @@ void MoCapData::freeNatNetSkeletonData(sSkeletonData& refSkeleton)
 		freeNatNetRigidBodySetData(refSkeleton.RigidBodyData[bIdx]);
 	}
 	delete[] refSkeleton.RigidBodyData;
-	refSkeleton.RigidBodyData = NULL;
+	refSkeleton.RigidBodyData = nullptr;
 	refSkeleton.nRigidBodies  = 0;
 }
 

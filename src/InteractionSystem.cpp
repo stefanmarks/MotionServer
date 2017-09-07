@@ -250,8 +250,8 @@ bool InteractionSystem::deinitialise()
 {
 	if (isActive())
 	{
-		m_pCoordinator.reset(NULL);
-		m_pSerialPort.reset(NULL);
+		m_pCoordinator.reset();
+		m_pSerialPort.reset();
 
 		if (m_receiverThread.joinable())
 		{
