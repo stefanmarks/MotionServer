@@ -120,7 +120,7 @@ private:
 	 *
 	 * @param names  the parameter name list to search for
 	 *
-	 * @return pointer to the stream configuration or NULL if no configuration matches
+	 * @return pointer to the stream configuration or \c nullptr if no configuration matches
 	 */
 	const StreamConfiguration* findConfiguration(const std::vector<std::string>& names);
 
