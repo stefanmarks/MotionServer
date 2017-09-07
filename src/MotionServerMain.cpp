@@ -752,7 +752,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 
 		case NAT_REQUEST_FRAMEOFDATA:
 		{
-			// Client does not typically poll for data, but we accomodate it here anyway
+			// Client does not typically poll for data, but we accommodate it here anyway
 			// note: need to return response on same thread as caller
 
 			// This function does not call pMoCapSystem->getFrameData()

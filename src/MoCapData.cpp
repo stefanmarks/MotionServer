@@ -148,6 +148,36 @@ sForcePlateDescription* MoCapData::findForcePlateDescription(const sForcePlateDa
 }
 
 
+void MoCapData::resetMarkerData(sMarkerSetData& refMarkerSetData) const
+{
+	for (int mIdx = 0; mIdx < refMarkerSetData.nMarkers; mIdx++)
+	{
+		MarkerData& refMarker = refMarkerSetData.Markers[mIdx];
+		refMarker[0] = 0.0f;
+		refMarker[1] = 0.0f;
+		refMarker[2] = 0.0f;
+	}
+}
+
+
+void MoCapData::resetSkeletonData(sSkeletonData&  refSkeletonData) const
+{
+	for (int rIdx = 0; rIdx < refSkeletonData.nRigidBodies; rIdx++)
+	{
+		sRigidBodyData& rigidData = refSkeletonData.RigidBodyData[rIdx];
+		rigidData.x = 0;
+		rigidData.y = 0;
+		rigidData.z = 0;
+		rigidData.qw = 1;
+		rigidData.qx = 0;
+		rigidData.qy = 0;
+		rigidData.qz = 0;
+		rigidData.MeanError = 0;
+		rigidData.params    = STATUS_NOT_TRACKED;
+	}
+}
+
+
 void MoCapData::freeNatNetDescription()
 {
 	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)

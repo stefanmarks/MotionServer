@@ -28,6 +28,9 @@ public:
 	sSkeletonDescription*   findSkeletonDescription(  const sSkeletonData&   refSkeletonData) const;
 	sForcePlateDescription* findForcePlateDescription(const sForcePlateData& refForcePlateData) const;
 
+	void resetMarkerData(   sMarkerSetData& refMarkerSetData) const;
+	void resetSkeletonData( sSkeletonData&  refSkeletonData) const;
+
 private:
 
 	// Internal methods for freeing dynamically allocated data structures
