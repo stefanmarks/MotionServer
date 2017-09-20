@@ -48,7 +48,8 @@ public:
 
 private:
 
-	float findBoneLength(int aindex, const NUI_SKELETON_DATA& skeleton);
+	float findBoneLength(int aindex, NUI_SKELETON_DATA skeleton);
+	float findDy(int aindex, NUI_SKELETON_DATA skeleton);
 	void handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame, MoCapData& refData);
 	void checkUserLost(const NUI_SKELETON_FRAME& refSkeletonFrame);
 	void checkUserFound(const NUI_SKELETON_FRAME& refSkeletonFrame);
