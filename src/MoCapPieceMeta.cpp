@@ -137,6 +137,7 @@ MoCapPieceMetaConfiguration::MoCapPieceMetaConfiguration() :
 bool MoCapPieceMetaConfiguration::handleArgument(unsigned int _idx, const std::string& _value)
 {
 	bool success = true;
+
 	switch (_idx)
 	{
 		case 0: 
