@@ -393,8 +393,7 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 			{
 				for (int j = 0; j < BONE_DATA_COUNT; j++)
 				{
-					NUI_SKELETON_BONE_ORIENTATION& orientation = boneOrientations[SKELETON_DATA[j].boneIndex];
-					sRigidBodyData&    rigidData = skeleData.RigidBodyData[j];
+					sRigidBodyData& rigidData = skeleData.RigidBodyData[j];
 					if (j == 0) 
 					{
 						const Vector4& point = skeleton.SkeletonPositions[NUI_SKELETON_POSITION_HIP_CENTER];
@@ -405,14 +404,15 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 					else 
 					{
 						rigidData.x = 0;
-						rigidData.y = findDy(SKELETON_DATA[j].index, skeleton);
+						rigidData.y = findDy(j, skeleton);
 						rigidData.z = 0;
 					}
+					NUI_SKELETON_BONE_ORIENTATION& orientation = boneOrientations[BONE_DATA[j].kEnd];
 					rigidData.qw = orientation.hierarchicalRotation.rotationQuaternion.w;
 					rigidData.qx = orientation.hierarchicalRotation.rotationQuaternion.x;
 					rigidData.qy = orientation.hierarchicalRotation.rotationQuaternion.y;
 					rigidData.qz = orientation.hierarchicalRotation.rotationQuaternion.z;
-					rigidData.MeanError = findBoneLength(SKELETON_DATA[j].index, skeleton);
+					rigidData.MeanError = findBoneLength(j, skeleton);
 					rigidData.params = STATUS_TRACKED;
 				}
 			}
