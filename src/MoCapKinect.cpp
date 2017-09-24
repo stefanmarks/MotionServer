@@ -21,14 +21,13 @@
 /**
 * Structure for associating marker names with their Kinect skeleton ID
 */
-struct sKinectSkeletonData
+struct sMarkerDescription
 {
 	const char*                       czPositionName;
 	const NUI_SKELETON_POSITION_INDEX index;
-	const int boneIndex;
 };
 
-struct sKinectBoneData
+struct sBoneDescription
 {
 	const char*                       czBoneName;
 	const int parentIndex;
@@ -37,7 +36,7 @@ struct sKinectBoneData
 	const NUI_SKELETON_POSITION_INDEX kEnd;
 };
 
-const sKinectBoneData BONE_DATA[]
+const sBoneDescription BONE_DESCRIPTION[]
 {
 	{ "Hip", -1, NUI_SKELETON_POSITION_HIP_CENTER, NUI_SKELETON_POSITION_HIP_CENTER, NUI_SKELETON_POSITION_HIP_CENTER},
 	{ "Spine",  0, NUI_SKELETON_POSITION_HIP_CENTER, NUI_SKELETON_POSITION_HIP_CENTER, NUI_SKELETON_POSITION_SPINE},
@@ -61,32 +60,32 @@ const sKinectBoneData BONE_DATA[]
 	{ "FootRight",     18, NUI_SKELETON_POSITION_KNEE_RIGHT, NUI_SKELETON_POSITION_ANKLE_RIGHT, NUI_SKELETON_POSITION_FOOT_RIGHT},
 };
 
-const sKinectSkeletonData SKELETON_DATA[]
+const sMarkerDescription MARKER_DESCRIPTION[]
 {
-	{ "HipCentre",     NUI_SKELETON_POSITION_HIP_CENTER, 0},
-	{ "Spine",         NUI_SKELETON_POSITION_SPINE, 1},
-	{ "ShoulderCentre",NUI_SKELETON_POSITION_SHOULDER_CENTER, 2 },
-	{ "Head",          NUI_SKELETON_POSITION_HEAD, 3 },
-	{ "ShoulderLeft",  NUI_SKELETON_POSITION_SHOULDER_LEFT, 4 },
-	{ "ElbowLeft",     NUI_SKELETON_POSITION_ELBOW_LEFT, 5 },
-	{ "WristLeft",     NUI_SKELETON_POSITION_WRIST_LEFT, 6 },
-	{ "HandLeft",      NUI_SKELETON_POSITION_HAND_LEFT, 7 },
-	{ "ShoulderRight", NUI_SKELETON_POSITION_SHOULDER_RIGHT, 8 },
-	{ "ElbowRight",    NUI_SKELETON_POSITION_ELBOW_RIGHT, 9 },
-	{ "WristRight",    NUI_SKELETON_POSITION_WRIST_RIGHT, 10 },
-	{ "HandRight",     NUI_SKELETON_POSITION_HAND_RIGHT, 11 },
-	{ "HipLeft",       NUI_SKELETON_POSITION_HIP_LEFT, 12},
-	{ "KneeLeft",      NUI_SKELETON_POSITION_KNEE_LEFT, 13 },
-	{ "AnkleLeft",     NUI_SKELETON_POSITION_ANKLE_LEFT, 14 },
-	{ "FootLeft",      NUI_SKELETON_POSITION_FOOT_LEFT, 15 },
-	{ "HipRight",      NUI_SKELETON_POSITION_HIP_RIGHT, 16},
-	{ "KneeRight",     NUI_SKELETON_POSITION_KNEE_RIGHT, 17},
-	{ "AnkleRight",    NUI_SKELETON_POSITION_ANKLE_RIGHT, 18},
-	{ "FootRight",     NUI_SKELETON_POSITION_FOOT_RIGHT, 19},
+	{ "HipCentre",     NUI_SKELETON_POSITION_HIP_CENTER},
+	{ "Spine",         NUI_SKELETON_POSITION_SPINE},
+	{ "ShoulderCentre",NUI_SKELETON_POSITION_SHOULDER_CENTER},
+	{ "Head",          NUI_SKELETON_POSITION_HEAD},
+	{ "ShoulderLeft",  NUI_SKELETON_POSITION_SHOULDER_LEFT},
+	{ "ElbowLeft",     NUI_SKELETON_POSITION_ELBOW_LEFT},
+	{ "WristLeft",     NUI_SKELETON_POSITION_WRIST_LEFT},
+	{ "HandLeft",      NUI_SKELETON_POSITION_HAND_LEFT},
+	{ "ShoulderRight", NUI_SKELETON_POSITION_SHOULDER_RIGHT},
+	{ "ElbowRight",    NUI_SKELETON_POSITION_ELBOW_RIGHT},
+	{ "WristRight",    NUI_SKELETON_POSITION_WRIST_RIGHT},
+	{ "HandRight",     NUI_SKELETON_POSITION_HAND_RIGHT},
+	{ "HipLeft",       NUI_SKELETON_POSITION_HIP_LEFT},
+	{ "KneeLeft",      NUI_SKELETON_POSITION_KNEE_LEFT},
+	{ "AnkleLeft",     NUI_SKELETON_POSITION_ANKLE_LEFT},
+	{ "FootLeft",      NUI_SKELETON_POSITION_FOOT_LEFT},
+	{ "HipRight",      NUI_SKELETON_POSITION_HIP_RIGHT},
+	{ "KneeRight",     NUI_SKELETON_POSITION_KNEE_RIGHT},
+	{ "AnkleRight",    NUI_SKELETON_POSITION_ANKLE_RIGHT},
+	{ "FootRight",     NUI_SKELETON_POSITION_FOOT_RIGHT},
 };
 
-const int SKELETON_DATA_COUNT = sizeof(SKELETON_DATA) / sizeof(SKELETON_DATA[0]);
-const int BONE_DATA_COUNT = sizeof(BONE_DATA) / sizeof(BONE_DATA[0]);
+const int MARKER_DESCRIPTION_COUNT = sizeof(MARKER_DESCRIPTION) / sizeof(MARKER_DESCRIPTION[0]);
+const int BONE_DESCRIPTION_COUNT = sizeof(BONE_DESCRIPTION) / sizeof(BONE_DESCRIPTION[0]);
 
 
 
@@ -244,7 +243,7 @@ bool MoCapKinect::getSceneDescription(MoCapData& refData)
 		strcpy_s(msData.szName, sizeof(msData.szName), pMarkerDesc->szName);
 
 		// number of markers
-		pMarkerDesc->nMarkers = SKELETON_DATA_COUNT;
+		pMarkerDesc->nMarkers = MARKER_DESCRIPTION_COUNT;
 		msData.nMarkers = pMarkerDesc->nMarkers;
 
 		pMarkerDesc->szMarkerNames = new char*[pMarkerDesc->nMarkers];
@@ -252,7 +251,7 @@ bool MoCapKinect::getSceneDescription(MoCapData& refData)
 
 		for (int m = 0; m < pMarkerDesc->nMarkers; m++)
 		{
-			pMarkerDesc->szMarkerNames[m] = _strdup(SKELETON_DATA[m].czPositionName);
+			pMarkerDesc->szMarkerNames[m] = _strdup(MARKER_DESCRIPTION[m].czPositionName);
 		}
 
 		// add to description list
@@ -271,7 +270,7 @@ bool MoCapKinect::getSceneDescription(MoCapData& refData)
 		pSkeletonDesc->skeletonID = nRigid;
 		skData.skeletonID = pSkeletonDesc->skeletonID;
 
-		pSkeletonDesc->nRigidBodies = BONE_DATA_COUNT;
+		pSkeletonDesc->nRigidBodies = BONE_DESCRIPTION_COUNT;
 		skData.nRigidBodies = pSkeletonDesc->nRigidBodies;
 
 		skData.RigidBodyData = new sRigidBodyData[pSkeletonDesc->nRigidBodies];
@@ -299,8 +298,8 @@ bool MoCapKinect::getSceneDescription(MoCapData& refData)
 void MoCapKinect::readRigidBodyDescription(sRigidBodyDescription &descr, sRigidBodyData& data, int rbodies)
 {
 	descr.ID = rbodies;
-	strcpy_s(descr.szName, sizeof(descr.szName), BONE_DATA[rbodies].czBoneName);
-	descr.parentID = BONE_DATA[rbodies].parentIndex;
+	strcpy_s(descr.szName, sizeof(descr.szName), BONE_DESCRIPTION[rbodies].czBoneName);
+	descr.parentID = BONE_DESCRIPTION[rbodies].parentIndex;
 	descr.offsetx = 0; descr.offsety = 0; descr.offsetz = 0;
 
 	data.ID          = descr.ID;
@@ -365,7 +364,7 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 			// go through all bones
 			for (int mIdx = 0; mIdx < msData.nMarkers; mIdx++)
 			{
-				int            skeletonIdx = SKELETON_DATA[mIdx].index;
+				int            skeletonIdx = MARKER_DESCRIPTION[mIdx].index;
 				const Vector4& point = skeleton.SkeletonPositions[skeletonIdx];
 				MarkerData&    msMarker = msData.Markers[mIdx];
 
@@ -391,7 +390,7 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 			sSkeletonData& skeleData = refData.frame.Skeletons[userIdx];
 			if (skeleton.eTrackingState == NUI_SKELETON_TRACKED)
 			{
-				for (int j = 0; j < BONE_DATA_COUNT; j++)
+				for (int j = 0; j < BONE_DESCRIPTION_COUNT; j++)
 				{
 					sRigidBodyData& rigidData = skeleData.RigidBodyData[j];
 					if (j == 0) 
@@ -404,15 +403,15 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 					else 
 					{
 						rigidData.x = 0;
-						rigidData.y = findDy(j, skeleton);
+						rigidData.y = CalculateDy(j, skeleton);
 						rigidData.z = 0;
 					}
-					NUI_SKELETON_BONE_ORIENTATION& orientation = boneOrientations[BONE_DATA[j].kEnd];
+					NUI_SKELETON_BONE_ORIENTATION& orientation = boneOrientations[BONE_DESCRIPTION[j].kEnd];
 					rigidData.qw = orientation.hierarchicalRotation.rotationQuaternion.w;
 					rigidData.qx = orientation.hierarchicalRotation.rotationQuaternion.x;
 					rigidData.qy = orientation.hierarchicalRotation.rotationQuaternion.y;
 					rigidData.qz = orientation.hierarchicalRotation.rotationQuaternion.z;
-					rigidData.MeanError = findBoneLength(j, skeleton);
+					rigidData.MeanError = CalculateBoneLength(j, skeleton);
 					rigidData.params = STATUS_TRACKED;
 				}
 			}
@@ -434,10 +433,10 @@ void MoCapKinect::handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame,
 }
 
 //Find RigidData.y of the bone
-float MoCapKinect::findDy(int aindex, NUI_SKELETON_DATA skeleton)
+float MoCapKinect::CalculateDy(int aindex, NUI_SKELETON_DATA skeleton)
 {
-	const Vector4& endPoint = skeleton.SkeletonPositions[BONE_DATA[aindex].kPoint];
-	const Vector4& startPoint = skeleton.SkeletonPositions[BONE_DATA[aindex].kParent];
+	const Vector4& endPoint = skeleton.SkeletonPositions[BONE_DESCRIPTION[aindex].kPoint];
+	const Vector4& startPoint = skeleton.SkeletonPositions[BONE_DESCRIPTION[aindex].kParent];
 	float e = 0;
 	float x = endPoint.x - startPoint.x;
 	float y = endPoint.y - startPoint.y;
@@ -453,10 +452,10 @@ float MoCapKinect::findDy(int aindex, NUI_SKELETON_DATA skeleton)
 }
 
 //Find the length of the bone
-float MoCapKinect::findBoneLength(int aindex, NUI_SKELETON_DATA skeleton)
+float MoCapKinect::CalculateBoneLength(int aindex, NUI_SKELETON_DATA skeleton)
 {
-	const Vector4& endPoint = skeleton.SkeletonPositions[BONE_DATA[aindex].kEnd];
-	const Vector4& startPoint = skeleton.SkeletonPositions[BONE_DATA[aindex].kPoint];
+	const Vector4& endPoint = skeleton.SkeletonPositions[BONE_DESCRIPTION[aindex].kEnd];
+	const Vector4& startPoint = skeleton.SkeletonPositions[BONE_DESCRIPTION[aindex].kPoint];
 	float e = 0;
 	float x = endPoint.x - startPoint.x;
 	float y = endPoint.y - startPoint.y;
