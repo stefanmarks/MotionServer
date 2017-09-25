@@ -5,10 +5,10 @@
 
 #pragma comment(lib, "Kinect10.lib")
 
+#include <Windows.h>
 #include "MoCapSystem.h"
 #include "Configuration.h"
 
-#include <Windows.h>
 #include <NuiApi.h>
 
 #include <vector>
@@ -48,11 +48,13 @@ public:
 
 private:
 
-	void handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame, MoCapData& refData);
-	void checkUserLost(const NUI_SKELETON_FRAME& refSkeletonFrame);
-	void checkUserFound(const NUI_SKELETON_FRAME& refSkeletonFrame);
-	void readRigidBodyDescription(sRigidBodyDescription& descr, sRigidBodyData& data, int rbodies);
-	void cleanup();
+	void  handleSkeletonData(const NUI_SKELETON_FRAME& refSkeletonFrame, MoCapData& refData);
+	float calculateBoneLength(int aindex, NUI_SKELETON_DATA skeleton);
+	float calculateBoneOffset(int aindex, NUI_SKELETON_DATA skeleton);
+	void  checkUserLost(const NUI_SKELETON_FRAME& refSkeletonFrame);
+	void  checkUserFound(const NUI_SKELETON_FRAME& refSkeletonFrame);
+	void  readRigidBodyDescription(sRigidBodyDescription& descr, sRigidBodyData& data, int rbodies);
+	void  cleanup();
 
 private:
 

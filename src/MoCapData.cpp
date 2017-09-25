@@ -160,20 +160,25 @@ void MoCapData::resetMarkerData(sMarkerSetData& refMarkerSetData) const
 }
 
 
+void MoCapData::resetRigidBodyData(sRigidBodyData&  refRigidBodyData) const
+{
+	refRigidBodyData.x = 0;
+	refRigidBodyData.y = 0;
+	refRigidBodyData.z = 0;
+	refRigidBodyData.qw = 1;
+	refRigidBodyData.qx = 0;
+	refRigidBodyData.qy = 0;
+	refRigidBodyData.qz = 0;
+	refRigidBodyData.MeanError = 0;
+	refRigidBodyData.params = STATUS_NOT_TRACKED;
+}
+
+
 void MoCapData::resetSkeletonData(sSkeletonData&  refSkeletonData) const
 {
 	for (int rIdx = 0; rIdx < refSkeletonData.nRigidBodies; rIdx++)
 	{
-		sRigidBodyData& rigidData = refSkeletonData.RigidBodyData[rIdx];
-		rigidData.x = 0;
-		rigidData.y = 0;
-		rigidData.z = 0;
-		rigidData.qw = 1;
-		rigidData.qx = 0;
-		rigidData.qy = 0;
-		rigidData.qz = 0;
-		rigidData.MeanError = 0;
-		rigidData.params    = STATUS_NOT_TRACKED;
+		resetRigidBodyData(refSkeletonData.RigidBodyData[rIdx]);
 	}
 }
 

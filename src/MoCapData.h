@@ -29,6 +29,7 @@ public:
 	sForcePlateDescription* findForcePlateDescription(const sForcePlateData& refForcePlateData) const;
 
 	void resetMarkerData(   sMarkerSetData& refMarkerSetData) const;
+	void resetRigidBodyData(sRigidBodyData& refRigidBodyData) const;
 	void resetSkeletonData( sSkeletonData&  refSkeletonData) const;
 
 private:

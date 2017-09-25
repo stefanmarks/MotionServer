@@ -725,7 +725,7 @@ int __cdecl callbackNatNetServerRequestHandler(sPacket* pPacketIn, sPacket* pPac
 
 			pPacketOut->Data.Sender.Version[0] = MOTIONSERVER_VERSION_MAJOR;
 			pPacketOut->Data.Sender.Version[1] = MOTIONSERVER_VERSION_MINOR;
-			pPacketOut->Data.Sender.Version[2] = MOTIONSERVER_VERSION_BUILD;
+			pPacketOut->Data.Sender.Version[2] = MOTIONSERVER_VERSION_REVISION;
 			pPacketOut->Data.Sender.Version[3] = 0;
 	
 			for (int i = 0; i < 4; i++)
@@ -909,7 +909,7 @@ int main(int nArguments, char* arrArguments[])
 			LOG_INFO("Starting MotionServer '" << config.pMain->serverName << "' v"
 				<< MOTIONSERVER_VERSION_MAJOR << "." 
 				<< MOTIONSERVER_VERSION_MINOR << "." 
-				<< MOTIONSERVER_VERSION_BUILD);
+				<< MOTIONSERVER_VERSION_REVISION);
 
 			// create data object
 			pMocapData = new MoCapData();
