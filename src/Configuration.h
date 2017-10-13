@@ -43,14 +43,14 @@ public:
 		 *
 		 * @return the parameter of the argument
 		 */
-		const std::string& getParameter() const { return description; }
+		const std::string& getParameter() const { return parameter; }
 
 		/**
 		 * @brief Gets the description of the argument.
 		 *
 		 * @return the description of the argument
 		 */
-		const std::string& getDescription() const { return parameter; }
+		const std::string& getDescription() const { return description; }
 
 	protected:
 

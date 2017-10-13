@@ -28,7 +28,7 @@ MoCapCortexConfiguration::MoCapCortexConfiguration() :
 	localCortexAddress("")
 {
 	addParameter("-cortexRemoteAddress", "<address>", "IP Address of the remote interface to connect to Cortex");
-	addParameter("-cortexLocalAddress ", "<address>", "IP Address of the local interface to connect to Cortex");
+	addParameter("-cortexLocalAddress", " <address>", "IP Address of the local interface to connect to Cortex");
 }
 
 
@@ -43,7 +43,9 @@ bool MoCapCortexConfiguration::handleArgument(unsigned int _idx, const std::stri
 			break;
 
 		case 1:
+			std::cout << "ping";
 			localCortexAddress = _value;
+			break;
 
 		default:
 			success = false;
