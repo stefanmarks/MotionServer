@@ -27,8 +27,8 @@ MoCapCortexConfiguration::MoCapCortexConfiguration() :
 	remoteCortexAddress(""),
 	localCortexAddress("")
 {
-	addParameter("-cortexRemoteAddr", "<address>", "IP Address of remote interface to connect to Cortex");
-	addParameter("-cortexLocalAddr", "<address>",  "IP Address of local interface to connect to Cortex");
+	addParameter("-cortexRemoteAddress", "<address>", "IP Address of the remote interface to connect to Cortex");
+	addParameter("-cortexLocalAddress ", "<address>", "IP Address of the local interface to connect to Cortex");
 }
 
 
