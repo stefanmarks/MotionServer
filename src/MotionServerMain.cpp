@@ -93,8 +93,8 @@ public:
 	{
 		addOption(   "-h",                                       "Print Help");
 		addParameter("-serverName",                 "<name>",    "Name of MoCap Server (default: '" + serverName + "')");
-		addParameter("-serverAddr",                 "<address>", "IP Address of MotionServer (default: " + serverAddress + ")");
-		addParameter("-multicastAddr",              "<address>", "IP Address of multicast MotionServer (default: Unicast)");
+		addParameter("-serverAddress",              "<address>", "IP Address of MotionServer (default: " + serverAddress + ")");
+		addParameter("-multicastAddress",           "<address>", "IP Address of multicast MotionServer (default: Unicast)");
 		addParameter("-interactionControllerPort",  "<number>",  "COM port of XBee interaction controller (-1: scan)");
 		addOption(   "-writeFile",                               "Write MoCap data into timestamped files");
 		addParameter("-scale",                      "<scale>",   "Global scale for position data (default: 1.0)");
