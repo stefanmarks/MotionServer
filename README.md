@@ -26,18 +26,18 @@ or requested via email from [MotionAnalysis](http://www.motionanalysis.com/html/
 ### Generic Operation
 * `-h`                                   Print help to sceen and exit
 * `-serverName <name>`                   Define the name of the MotionServer instance (default: `MotionServer`)
-* `-serverAddr <address>`                Define the IP address of the MotionServer instance (default: `127.0.0.1`)
-* `-multicastAddr <address>`             Define the Multicast IP Address of the MotionServer instance (default: disabled, using Unicast)
+* `-serverAddress <address>`             Define the IP address of the MotionServer instance (default: `127.0.0.1`)
+* `-multicastAddress <address>`          Define the Multicast IP Address of the MotionServer instance (default: disabled, using Unicast)
 * `-interactionControllerPort <number>`  COM port of XBee interaction controller (default: 0=disabled, -1: scan for controller)
 * `-readFile <filename>`                 Read MoCap data from a file
 * `-writeFile`                           Write MoCap data into timestamped files
 
 ### Specific to Cortex
-* `-cortexRemoteAddr <address>`  IP Address of the computer operating Cortex (can be `localhost` or `127.0.0.1`)
-* `-cortexLocalAddr <address>`   IP Address of the local interface connecting to Cortex (usually only necessary in case of several network cards)
+* `-cortexRemoteAddress <address>`  IP Address of the computer operating Cortex (can be `localhost` or `127.0.0.1`)
+* `-cortexLocalAddress <address>`   IP Address of the local interface connecting to Cortex (usually only necessary in case of several network cards)
 
 <!-- ### Examples
-* `MotionServer.exe -serverAddr 127.0.0.1`
+* `MotionServer.exe -serverAddress 127.0.0.1`
 -->
 
 ## Commands during runtime
