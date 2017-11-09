@@ -1,3 +1,7 @@
+/**
+ * Motion Capture system that uses the Microsoft Kinect
+ */
+
 #pragma once
 #include "Config.h"
 
@@ -5,10 +9,10 @@
 
 #pragma comment(lib, "Kinect10.lib")
 
-#include <Windows.h>
 #include "MoCapSystem.h"
 #include "Configuration.h"
 
+#include <Windows.h>
 #include <NuiApi.h>
 
 #include <vector>
@@ -68,4 +72,4 @@ private:
 	std::vector<int> userSkeletonIdx;
 };
 
-#endif
+#endif // #ifdef USE_KINECT

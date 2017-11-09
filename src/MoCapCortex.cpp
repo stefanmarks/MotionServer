@@ -95,8 +95,8 @@ void __cdecl callbackMoCapCortexDataHandler(sFrameOfData* pFrameOfData)
  * MoCapCortex class
  */
 
-MoCapCortex::MoCapCortex(MoCapCortexConfiguration configuration) :
-	configuration(configuration),
+MoCapCortex::MoCapCortex(MoCapCortexConfiguration _configuration) :
+	configuration(_configuration),
 	initialised(false),
 	running(true),
 	pCortexInfo(nullptr),

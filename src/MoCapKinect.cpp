@@ -1,4 +1,4 @@
-#include "MocapKinect.h"
+#include "MoCapKinect.h"
 
 #ifdef USE_KINECT
 

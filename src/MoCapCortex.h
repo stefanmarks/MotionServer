@@ -34,7 +34,7 @@ public:
 class MoCapCortex : public MoCapSystem
 {
 public:
-	MoCapCortex(MoCapCortexConfiguration cofiguration);
+	MoCapCortex(MoCapCortexConfiguration _configuration);
 	virtual ~MoCapCortex();
 
 public:

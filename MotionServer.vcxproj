@@ -100,7 +100,7 @@
     <ClInclude Include="src\InteractionSystem.h" />
     <ClInclude Include="src\MoCapCortex.h" />
     <ClInclude Include="src\MoCapData.h" />
-    <ClInclude Include="src\MocapKinect.h" />
+    <ClInclude Include="src\MoCapKinect.h" />
     <ClInclude Include="src\MoCapPieceMeta.h" />
     <ClInclude Include="src\MoCapSimulator.h" />
     <ClInclude Include="src\MoCapSystem.h" />
