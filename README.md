@@ -10,7 +10,7 @@ For copyright reasons, this project does not contain the sources, libraries, and
 Those files need to be downloaded from [OptiTrack](http://www.optitrack.com/products/natnet-sdk/),
 or requested via email from [MotionAnalysis](https://www.motionanalysis.com/support/).
 
-Please note that the OptiTrack update of the NatNet SDK to v3 in September 2017 has changed the bitstream syntax that might make it incompatible with the other Motion Server clients. Please use SDK v2.10 until this problem has been resolved.
+Please note that the OptiTrack update of the NatNet SDK to v3 in September 2017 has changed the bitstream syntax in a way that might make it incompatible with the other Motion Server clients. Please use SDK v2.10 until this problem has been resolved.
 
 
 ## Folder structure
