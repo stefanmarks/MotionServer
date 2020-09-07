@@ -11,6 +11,7 @@ Those files need to be downloaded from [OptiTrack](http://www.optitrack.com/prod
 or requested via email from [MotionAnalysis](https://www.motionanalysis.com/support/).
 
 Please note that the OptiTrack update of the NatNet SDK to v3 in September 2017 has changed the bitstream syntax in a way that might make it incompatible with the other Motion Server clients. Please use SDK v2.10 until this problem has been resolved.
+Oh, and, even more important, OptiTrack removed the server code from SDK v3... :-(
 
 
 ## Folder structure
