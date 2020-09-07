@@ -12,6 +12,7 @@ Obsolete/
 Recordings/
 include/*.h
 lib32/*.lib
+lib64/*.lib
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
