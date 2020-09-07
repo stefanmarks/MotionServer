@@ -17,7 +17,7 @@ Please note that the OptiTrack update of the NatNet SDK to v3 in September 2017 
 
 * `include/`  Folder for include files from the [NatNet SDK 2.10](http://www.optitrack.com/products/natnet-sdk/) 
               and other Motion Capture system SDKs (e.g., [Cortex](http://www.motionanalysis.com/html/industrial/cortex.html))
-* `lib32/`    Folder for 32 bit libraries from the [NatNet SDK 2.10](http://www.optitrack.com/products/natnet-sdk/) 
+* `lib64/`    Folder for 64 bit libraries from the [NatNet SDK 2.10](http://www.optitrack.com/products/natnet-sdk/) 
               and other Motion Capture system SDKs (e.g., [Cortex](http://www.motionanalysis.com/html/industrial/cortex.html))
 * `src/`      _MotionServer_ source files
 * `Hardware`  Files related to hardware, e.g., the XBee interaction controller configuration files
