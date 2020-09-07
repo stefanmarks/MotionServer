@@ -7,14 +7,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MotionServer", "MotionServe
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Windows = Debug|Windows
-		Release|Windows = Release|Windows
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A8653661-F174-4ACF-B1D3-8285BE077D49}.Debug|Windows.ActiveCfg = Debug|x64
-		{A8653661-F174-4ACF-B1D3-8285BE077D49}.Debug|Windows.Build.0 = Debug|x64
-		{A8653661-F174-4ACF-B1D3-8285BE077D49}.Release|Windows.ActiveCfg = Release|x64
-		{A8653661-F174-4ACF-B1D3-8285BE077D49}.Release|Windows.Build.0 = Release|x64
+		{A8653661-F174-4ACF-B1D3-8285BE077D49}.Debug|x64.ActiveCfg = Debug|x64
+		{A8653661-F174-4ACF-B1D3-8285BE077D49}.Debug|x64.Build.0 = Debug|x64
+		{A8653661-F174-4ACF-B1D3-8285BE077D49}.Release|x64.ActiveCfg = Release|x64
+		{A8653661-F174-4ACF-B1D3-8285BE077D49}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
