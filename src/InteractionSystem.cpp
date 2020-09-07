@@ -204,7 +204,7 @@ void InteractionSystem::getSceneDescription(MoCapData& refData)
 		strncpy_s(pForce->strSerialNo, device->getName().c_str(), sizeof(pForce->strSerialNo));
 		
 		// channel information
-		pForce->nChannels = device->getChannelCount(); // channel count
+		pForce->nChannels = (int) device->getChannelCount(); // channel count
 		for (size_t chnIdx = 0; chnIdx < device->getChannelCount(); chnIdx++)
 		{
 			strncpy_s(
@@ -223,7 +223,7 @@ void InteractionSystem::getSceneDescription(MoCapData& refData)
 
 void InteractionSystem::getFrameData(MoCapData& refData)
 {
-	refData.frame.nForcePlates = m_arrDevices.size(); // number of plates/devices
+	refData.frame.nForcePlates = (int) m_arrDevices.size(); // number of plates/devices
 	
 	int plateID = 0;
 	// fill in each device channel values
@@ -233,7 +233,7 @@ void InteractionSystem::getFrameData(MoCapData& refData)
 		// plate ID (start counting at 1)
 		plateID++; refForce.ID = plateID; 
 		// channel count
-		refForce.nChannels = device->getChannelCount();  
+		refForce.nChannels = (int) device->getChannelCount();  
 		// values
 		for (size_t chnIdx = 0; chnIdx < device->getChannelCount(); chnIdx++)
 		{

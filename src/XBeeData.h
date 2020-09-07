@@ -9,7 +9,7 @@
 
 #include <memory>
 #include <vector>
-
+#include <string>
 
 /******************************************************************************
  * Class for extracting numbers and strings from a byte buffer in Big Endian order.
