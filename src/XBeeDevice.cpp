@@ -166,7 +166,7 @@ bool XBeeCoordinator::send(XBeePacket_Send& refPacket)
 	m_bufOut.addByte((uint8_t)255 - m_bufOut.calculateChecksum());
 
 	// and now send the buffer
-	DWORD nBytesToSend = m_bufOut.size();
+	DWORD nBytesToSend = (DWORD) m_bufOut.size();
 
 #ifdef LOG_DATA
 	LOG_INFO("Sending " << nBytesToSend << " bytes (frame ID " << (int)refPacket.getFrameID() << ")");

@@ -542,6 +542,8 @@ bool createServer()
 		config.pMain->commandPort,
 		config.pMain->dataPort);
 
+	mtxServer.unlock();
+
 	if (retCode == ErrorCode_OK)
 	{
 		LOG_INFO(((iConnectionType == ConnectionType_Multicast) ? "Multicast" : "Unicast") << " server initialised");
@@ -562,11 +564,8 @@ bool createServer()
 	else
 	{
 		LOG_ERROR("Could not initialise server");
-		mtxServer.unlock();
 		destroyServer();
 	}
-
-	mtxServer.unlock();
 
 	return isServerRunning();
 }
@@ -623,7 +622,7 @@ void signalNewFrame()
 		// display animated character
 		if (frameCallbackCounter == 0)
 		{
-			callbackAnimCounter = (callbackAnimCounter + 1) % (sizeof(arrCallbackAnimation) / sizeof(arrCallbackAnimation[0]));
+			callbackAnimCounter = (callbackAnimCounter + 1) % (int)(sizeof(arrCallbackAnimation) / sizeof(arrCallbackAnimation[0]));
 			std::cout << arrCallbackAnimation[callbackAnimCounter] << "\b" << std::flush;
 		}
 		frameCallbackCounter = (frameCallbackCounter + 1) % frameCallbackModulo;
