@@ -101,6 +101,7 @@ private:
 	void writeRigidBodyDescription( const sRigidBodyDescription&  descr);
 	void writeSkeletonDescription(  const sSkeletonDescription&   descr);
 	void writeForcePlateDescription(const sForcePlateDescription& descr);
+	void writeDeviceDescription(    const sDeviceDescription&     descr);
 
 	void writeFrameDataColumnNames(const MoCapData& refData);
 
@@ -108,6 +109,7 @@ private:
 	void writeRigidBodyData( const sRigidBodyData&  data);
 	void writeSkeletonData(  const sSkeletonData&   data);
 	void writeForcePlateData(const sForcePlateData& data);
+	void writeDeviceData(    const sDeviceData&     data);
 
 	void writeDelimiter();
 	void write(int   iValue);
@@ -206,11 +208,13 @@ private:
 	void readRigidBodyDescription( sRigidBodyDescription&  descr, sRigidBodyData&  data);
 	void readSkeletonDescription(  sSkeletonDescription&   descr, sSkeletonData&   data);
 	void readForcePlateDescription(sForcePlateDescription& descr, sForcePlateData& data);
+	void readDeviceDescription(    sDeviceDescription&     descr, sDeviceData&     data);
 
 	void readMarkerSetData( sMarkerSetData&  data);
 	void readRigidBodyData( sRigidBodyData&  data);
 	void readSkeletonData(  sSkeletonData&   data);
 	void readForcePlateData(sForcePlateData& data);
+	void readDeviceData(    sDeviceData&     data);
 
 	void        nextLine();
 	void        rewindLine();

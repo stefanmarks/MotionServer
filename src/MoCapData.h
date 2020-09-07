@@ -23,10 +23,11 @@ public:
 	void applyScale(float scale);
 
 public:
-	sMarkerSetDescription*  findMarkerSetDescription( const sMarkerSetData&  refMarkerSetData) const;
-	sRigidBodyDescription*  findRigidBodyDescription( const sRigidBodyData&  refRigidBodyData) const;
-	sSkeletonDescription*   findSkeletonDescription(  const sSkeletonData&   refSkeletonData) const;
+	sMarkerSetDescription*  findMarkerSetDescription( const sMarkerSetData&  refMarkerSetData ) const;
+	sRigidBodyDescription*  findRigidBodyDescription( const sRigidBodyData&  refRigidBodyData ) const;
+	sSkeletonDescription*   findSkeletonDescription(  const sSkeletonData&   refSkeletonData  ) const;
 	sForcePlateDescription* findForcePlateDescription(const sForcePlateData& refForcePlateData) const;
+	sDeviceDescription*     findDeviceDescription(    const sDeviceData&     refDeviceData    ) const;
 
 	void resetMarkerData(   sMarkerSetData& refMarkerSetData) const;
 	void resetRigidBodyData(sRigidBodyData& refRigidBodyData) const;
@@ -36,16 +37,18 @@ private:
 
 	// Internal methods for freeing dynamically allocated data structures
 	void freeNatNetDescription();
-	void freeNatNetMarkerSetDescription(sMarkerSetDescription* pMarkerSet);
-	void freeNatNetRigidBodyDescription(sRigidBodyDescription* pRigidBody);
-	void freeNatNetSkeletonDescription(sSkeletonDescription* pSkeleton);
+	void freeNatNetMarkerSetDescription( sMarkerSetDescription*  pMarkerSet);
+	void freeNatNetRigidBodyDescription( sRigidBodyDescription*  pRigidBody);
+	void freeNatNetSkeletonDescription(  sSkeletonDescription*   pSkeleton);
 	void freeNatNetForcePlateDescription(sForcePlateDescription* pForcePlate);
+	void freeNatNetDeviceDescription(    sDeviceDescription*     pDevice);
 
 	void freeNatNetFrameData();
-	void freeNatNetMarkerSetData(sMarkerSetData& refMarkerSetData);
-	void freeNatNetRigidBodySetData(sRigidBodyData& refBodySetData);
-	void freeNatNetSkeletonData(sSkeletonData& refSkeleton);
-	void freeNatNetForcePlateData(sForcePlateData& refForcePlate);
+	void freeNatNetMarkerSetData(   sMarkerSetData&  refMarkerSetData);
+	void freeNatNetRigidBodySetData(sRigidBodyData&  refBodySetData);
+	void freeNatNetSkeletonData(    sSkeletonData&   refSkeleton);
+	void freeNatNetForcePlateData(  sForcePlateData& refForcePlate);
+	void freeNatNetDeviceData(      sDeviceData&     refDevice);
 
 public:
 	sDataDescriptions description;

@@ -148,6 +148,26 @@ sForcePlateDescription* MoCapData::findForcePlateDescription(const sForcePlateDa
 }
 
 
+sDeviceDescription* MoCapData::findDeviceDescription(const sDeviceData& refDeviceData) const
+{
+	sDeviceDescription* pResult = nullptr;
+	for (int dataBlockIdx = 0; dataBlockIdx < description.nDataDescriptions; dataBlockIdx++)
+	{
+		const sDataDescription& descr = description.arrDataDescriptions[dataBlockIdx];
+		if (descr.type == Descriptor_Device)
+		{
+			// compare device by ID
+			if (descr.Data.DeviceDescription->ID == refDeviceData.ID)
+			{
+				pResult = descr.Data.DeviceDescription;
+				break;
+			}
+		}
+	}
+	return pResult;
+}
+
+
 void MoCapData::resetMarkerData(sMarkerSetData& refMarkerSetData) const
 {
 	for (int mIdx = 0; mIdx < refMarkerSetData.nMarkers; mIdx++)
@@ -214,6 +234,12 @@ void MoCapData::freeNatNetDescription()
 				descr.Data.ForcePlateDescription = nullptr;
 				break;
 
+			case Descriptor_Device:
+				// Periphery device -> release data
+				freeNatNetDeviceDescription(descr.Data.DeviceDescription);
+				descr.Data.DeviceDescription = nullptr;
+				break;
+
 			default:
 				// nothing to release for the other descriptors
 				break;
@@ -263,6 +289,13 @@ void MoCapData::freeNatNetForcePlateDescription(sForcePlateDescription* pForcePl
 }
 
 
+void MoCapData::freeNatNetDeviceDescription(sDeviceDescription* pDevice)
+{
+	// release structure
+	delete pDevice;
+}
+
+
 void MoCapData::freeNatNetFrameData()
 {
 	// delete marker sets
@@ -293,6 +326,13 @@ void MoCapData::freeNatNetFrameData()
 	}
 	frame.nForcePlates = 0;
 
+	// delete device data
+	for (int iDeviceIdx = 0; iDeviceIdx < frame.nForcePlates; iDeviceIdx++)
+	{
+		freeNatNetDeviceData(frame.Devices[iDeviceIdx]);
+	}
+	frame.nDevices = 0;
+
 	// delete unknown marker data
 	delete[] frame.OtherMarkers;
 	frame.nOtherMarkers = 0;
@@ -302,20 +342,14 @@ void MoCapData::freeNatNetFrameData()
 void MoCapData::freeNatNetMarkerSetData(sMarkerSetData& refMarkerSetData)
 {
 	delete[] refMarkerSetData.Markers;
-	refMarkerSetData.Markers = nullptr;
-	refMarkerSetData.nMarkers = 0;
+	refMarkerSetData.Markers   = nullptr;
+	refMarkerSetData.nMarkers  = 0;
 }
 
 
 void MoCapData::freeNatNetRigidBodySetData(sRigidBodyData& refBodySetData)
 {
-	delete[] refBodySetData.Markers;
-	refBodySetData.Markers = nullptr;
-	delete[] refBodySetData.MarkerIDs;
-	refBodySetData.MarkerIDs = nullptr;
-	delete[] refBodySetData.MarkerSizes;
-	refBodySetData.MarkerSizes = nullptr;
-	refBodySetData.nMarkers = 0;
+	// nothing to free
 }
 
 
@@ -336,4 +370,9 @@ void MoCapData::freeNatNetForcePlateData(sForcePlateData& refForcePlate)
 	refForcePlate.nChannels = 0;
 }
 
+
+void MoCapData::freeNatNetDeviceData(sDeviceData& refDevice)
+{
+	refDevice.nChannels = 0;
+}
 

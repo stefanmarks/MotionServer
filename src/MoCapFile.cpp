@@ -23,6 +23,7 @@
 #define TAG_RIGIDBODY   "R"
 #define TAG_SKELETON    "S"
 #define TAG_FORCEPLATE  "F"
+#define TAG_DEVICE      "D"
 
 #define limitArrayIdx(x, y) ((x > (y-1)) ? (y-1) : (x))
 
@@ -38,7 +39,9 @@ MoCapFileWriter::MoCapFileWriter(float framerate) :
 	fileHeaderWritten(false),
 	columnHeaderWritten(false),
 	lastFrame(-1),
-	bufSize(65536) // should be a good start for a buffer size...
+	bufSize(65536), // should be a good start for a buffer size...
+	czStrBuf(),
+	lineStarted(false)
 {
 	pBuf   = new char[bufSize];
 	pWrite = pBuf;
@@ -138,7 +141,8 @@ bool MoCapFileWriter::writeFrameData(const MoCapData& refData)
 		// frame number, timestamp, and latency
 		write(frame.iFrame);
 		write((float) frame.fTimestamp);
-		write(frame.fLatency);
+		
+		// write(frame.fLatency); // removed in v3
 		
 		// markersets
 		writeTag(TAG_MARKERSET);
@@ -172,6 +176,14 @@ bool MoCapFileWriter::writeFrameData(const MoCapData& refData)
 			writeForcePlateData(frame.ForcePlates[fIdx]);
 		}
 		
+		// periphery devices (added in v3)
+		writeTag(TAG_DEVICE);
+		write(frame.nDevices);
+		for (int dIdx = 0; dIdx < frame.nDevices; dIdx++)
+		{
+			writeDeviceData(frame.Devices[dIdx]);
+		}
+
 		nextLine();
 		success = output.good();
 		lastFrame = frame.iFrame;
@@ -224,11 +236,22 @@ void MoCapFileWriter::writeForcePlateDescription(const sForcePlateDescription& d
 }
 
 
+void MoCapFileWriter::writeDeviceDescription(const sDeviceDescription& descr)
+{
+	write(descr.ID);
+	write(descr.strSerialNo);
+	write(descr.nChannels);
+	for (int cIdx = 0; cIdx < descr.nChannels; cIdx++)
+	{
+		write(descr.szChannelNames[cIdx]);
+	}
+}
+
+
 void MoCapFileWriter::writeFrameDataColumnNames(const MoCapData& refData)
 {
 	writeColumnName("#frame"); // '#': when reading, consider this line a comment
 	writeColumnName("timestamp");
-	writeColumnName("latency");
 	
 	// markersets
 	writeColumnName("markersetTag");
@@ -374,6 +397,51 @@ void MoCapFileWriter::writeFrameDataColumnNames(const MoCapData& refData)
 			writeColumnName(czForcePlateName, czChannelName);
 		}
 	}
+
+	// periphery devices
+	writeColumnName("deviceTag");
+	writeColumnName("deviceCount");
+	for (int dIdx = 0; dIdx < refData.frame.nDevices; dIdx++)
+	{
+		const sDeviceData& data = refData.frame.Devices[dIdx];
+
+		// need to get description for individual devices
+		sDeviceDescription* descr = refData.findDeviceDescription(data);
+
+		// construct device name for colum header with tag followed by "."
+		char czDeviceName[MAX_NAMELENGTH + 2];
+		if (descr != NULL)
+		{
+			sprintf_s(czDeviceName, "%s.%s", TAG_DEVICE, descr->strSerialNo);
+		}
+		else
+		{
+			// something went wrong -> use generic name
+			sprintf_s(czDeviceName, "%s.%d", TAG_DEVICE, dIdx);
+		}
+
+		writeColumnName(czDeviceName, "id");
+		writeColumnName(czDeviceName, "channelCount");
+
+		for (int chIdx = 0; chIdx < data.nChannels; chIdx++)
+		{
+			const sAnalogChannelData& dataChannel = data.ChannelData[chIdx];
+
+			// construct channel name for colum header 
+			char czChannelName[MAX_NAMELENGTH];
+			if (descr != NULL)
+			{
+				sprintf_s(czChannelName, "%s", descr->szChannelNames[chIdx]);
+			}
+			else
+			{
+				// something went wrong -> use generic name
+				sprintf_s(czChannelName, "C%d", chIdx);
+			}
+
+			writeColumnName(czDeviceName, czChannelName);
+		}
+	}
 }
 
 
@@ -410,6 +478,18 @@ void MoCapFileWriter::writeSkeletonData(const sSkeletonData& data)
 
 
 void MoCapFileWriter::writeForcePlateData(const sForcePlateData& data)
+{
+	write(data.ID);
+	write(data.nChannels);
+	for (int cIdx = 0; cIdx < data.nChannels; cIdx++)
+	{
+		// file stores only one frame per tick, 
+		write(data.ChannelData[cIdx].Values[0]);
+	}
+}
+
+
+void MoCapFileWriter::writeDeviceData(const sDeviceData& data)
 {
 	write(data.ID);
 	write(data.nChannels);
@@ -627,6 +707,10 @@ MoCapFileReader::MoCapFileReader(MoCapFileReaderConfiguration configuration) :
 	updateRate(0),
 	pBuf(NULL), pRead(NULL),
 	bufSize(65536), // should be a good start for a buffer size...
+	czStrBuf(),
+	fileOK(false),
+	fileVersion(0),
+	headerOK(false),
 	running(true),
 	looping(true),
 	playbackSpeed(1.0f)
@@ -757,6 +841,15 @@ bool MoCapFileReader::getSceneDescription(MoCapData& refData)
 					refDescr.Data.ForcePlateDescription = pDescr;
 					refDescr.type = Descriptor_ForcePlate;
 				}
+				else if (_stricmp(czType, TAG_DEVICE) == 0)
+				{
+					sDeviceDescription* pDescr = new sDeviceDescription;
+					sDeviceData& refDData = refData.frame.Devices[refData.frame.nDevices];
+					refData.frame.nDevices++;
+					readDeviceDescription(*pDescr, refDData);
+					refDescr.Data.DeviceDescription = pDescr;
+					refDescr.type = Descriptor_Device;
+				}
 				else
 				{
 					LOG_WARNING("Error while reading description #" << refData.description.nDataDescriptions);
@@ -854,8 +947,11 @@ bool MoCapFileReader::getFrameData(MoCapData& refData)
 			frame.fTimestamp = frame.iFrame / (double) updateRate;
 		}
 
-		// latency
-		frame.fLatency = readFloat();
+		// latency (removed in file version 3)
+		if (fileVersion < 3)
+		{
+			readFloat();
+		}
 
 		// markersets
 		if (readTag(TAG_MARKERSET) && (readInt() == frame.nMarkerSets))
@@ -910,6 +1006,20 @@ bool MoCapFileReader::getFrameData(MoCapData& refData)
 		else
 		{
 			LOG_WARNING("Error in force plate data for frame " << frame.iFrame);
+			success = false;
+		}
+
+		// devices
+		if (readTag(TAG_DEVICE) && (readInt() == frame.nDevices))
+		{
+			for (int dIdx = 0; dIdx < frame.nDevices; dIdx++)
+			{
+				readDeviceData(frame.Devices[dIdx]);
+			}
+		}
+		else
+		{
+			LOG_WARNING("Error in device data for frame " << frame.iFrame);
 			success = false;
 		}
 	}
@@ -1001,8 +1111,8 @@ bool MoCapFileReader::readHeader()
 				<< ", Sample Rate: " << updateRate << "Hz"
 				<< ", Descriptions: " << nDescriptions << ")");
 
-			// file version 1 and 2 are valid so far
-			success = (fileVersion >= 1) && (fileVersion <= 2);
+			// file version 1 to 3 are valid so far
+			success = (fileVersion >= 1) && (fileVersion <= 3);
 		}
 	}
 	else
@@ -1034,14 +1144,11 @@ void MoCapFileReader::readRigidBodyDescription(sRigidBodyDescription& descr, sRi
 	descr.ID = readInt();
 	strcpy_s(descr.szName, sizeof(descr.szName), readString());
 	descr.parentID = readInt();
-	descr.offsetx = readFloat(); descr.offsety = readFloat(); descr.offsetz = readFloat();
+	descr.offsetx  = readFloat(); descr.offsety = readFloat(); descr.offsetz = readFloat();
+	descr.nMarkers = 0;
 
-	data.ID          = descr.ID;
-	data.nMarkers    = 0;
-	data.Markers     = NULL;
-	data.MarkerIDs   = NULL;
-	data.MarkerSizes = NULL;
-	data.MeanError   = 0;
+	data.ID        = descr.ID;
+	data.MeanError = 0;
 }
 
 
@@ -1063,6 +1170,21 @@ void MoCapFileReader::readSkeletonDescription(sSkeletonDescription& descr, sSkel
 
 
 void MoCapFileReader::readForcePlateDescription(sForcePlateDescription& descr, sForcePlateData& data)
+{
+	descr.ID = readInt();
+	strcpy_s(descr.strSerialNo, sizeof(descr.strSerialNo), readString());
+	descr.nChannels = readInt(0, MAX_ANALOG_CHANNELS);
+	for (int cIdx = 0; cIdx < descr.nChannels; cIdx++)
+	{
+		strcpy_s(descr.szChannelNames[cIdx], sizeof(descr.szChannelNames[cIdx]), readString());
+	}
+
+	data.ID        = descr.ID;
+	data.nChannels = descr.nChannels;
+}
+
+
+void MoCapFileReader::readDeviceDescription(sDeviceDescription& descr, sDeviceData& data)
 {
 	descr.ID = readInt();
 	strcpy_s(descr.strSerialNo, sizeof(descr.strSerialNo), readString());
@@ -1131,6 +1253,27 @@ void MoCapFileReader::readForcePlateData(sForcePlateData& data)
 	if (id != data.ID)
 	{
 		LOG_WARNING("Force Plate ID mismatch in frame data (" << id << " != " << data.ID << ")");
+	}
+	int nChannels = readInt();
+	if (nChannels != data.nChannels)
+	{
+		LOG_WARNING("Channel count mismatch in frame data (" << nChannels << " != " << data.nChannels << ")");
+	}
+	for (int cIdx = 0; cIdx < nChannels; cIdx++)
+	{
+		sAnalogChannelData& refChannel = data.ChannelData[limitArrayIdx(cIdx, data.nChannels)];
+		refChannel.nFrames = 1; // file stores only one sample per tick
+		refChannel.Values[0] = readFloat();
+	}
+}
+
+
+void MoCapFileReader::readDeviceData(sDeviceData& data)
+{
+	int id = readInt();
+	if (id != data.ID)
+	{
+		LOG_WARNING("Device ID mismatch in frame data (" << id << " != " << data.ID << ")");
 	}
 	int nChannels = readInt();
 	if (nChannels != data.nChannels)

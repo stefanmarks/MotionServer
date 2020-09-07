@@ -1,7 +1,7 @@
 ## Overview
 
 _MotionServer_ is a Windows command line tool 
-that converts motion capture data from multiple sources to the NatNet format
+that converts motion capture data from multiple sources to the OptiTrack NatNet format
 and streams it to the network.
 
 Latest development sources can be found [on github](https://github.com/stefanmarks/MotionServer).
@@ -10,14 +10,12 @@ For copyright reasons, this project does not contain the sources, libraries, and
 Those files need to be downloaded from [OptiTrack](http://www.optitrack.com/products/natnet-sdk/),
 or requested via email from [MotionAnalysis](https://www.motionanalysis.com/support/).
 
-Please note that the OptiTrack update of the NatNet SDK to v3 in September 2017 has changed the bitstream syntax in a way that might make it incompatible with the other Motion Server clients. Please use SDK v2.10 until this problem has been resolved.
-
 
 ## Folder structure
 
-* `include/`  Folder for include files from the [NatNet SDK 2.10](http://www.optitrack.com/products/natnet-sdk/) 
+* `include/`  Folder for include files from the [NatNet SDK 3](http://www.optitrack.com/products/natnet-sdk/) 
               and other Motion Capture system SDKs (e.g., [Cortex](http://www.motionanalysis.com/html/industrial/cortex.html))
-* `lib32/`    Folder for 32 bit libraries from the [NatNet SDK 2.10](http://www.optitrack.com/products/natnet-sdk/) 
+* `lib64/`    Folder for 64 bit libraries from the [NatNet SDK 3](http://www.optitrack.com/products/natnet-sdk/) 
               and other Motion Capture system SDKs (e.g., [Cortex](http://www.motionanalysis.com/html/industrial/cortex.html))
 * `src/`      _MotionServer_ source files
 * `Hardware`  Files related to hardware, e.g., the XBee interaction controller configuration files
@@ -62,3 +60,27 @@ Please note that the OptiTrack update of the NatNet SDK to v3 in September 2017 
 * `disableUnknownMarkers`  Do not send data for markers that cannot be associated with an actor
 
 
+## Changes from Version 1 to 2
+
+The OptiTrack update of the NatNet SDK to v3 in September 2017 has changed the bitstream syntax in a way that might make it incompatible with the other Motion Server clients. 
+
+### Data structures
+* Generic modification to use defined length types (e.g., uint16_t instead of unsigned short)
+* ServerDescription has additional fields that hold the multicast adddress
+
+#### Frame
+* latency - removed
+* periphery device data added after force plate
+* three high-res timestamps (camera exposure/data/transmit) added after main timestamp, before params
+
+#### Marker
+* additional field "residual"
+
+#### Rigid Body
+* marker description (nMarkers, marker data, marker IDs, marker sizes) moved from data structure to description (nMarkers, marker data, required labels)
+
+#### Periphery Device
+* introduced > transitioning Joystick input from ForcePlate to Periphery Device
+
+### Misc
+* PING and PINGRESPONSE are now called CONNECT and SERVERINFO

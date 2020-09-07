@@ -81,6 +81,12 @@ void printModelDefinitions(std::ostream& refOutput, sDataDescriptions& refData)
 					<< ", Parent: " << pRB->parentID
 					<< ", Offset: [" << pRB->offsetx << ", " << pRB->offsety << ", " << pRB->offsetz << "]"
 					<< ")" << std::endl;
+				for (int mIdx = 0; mIdx < pRB->nMarkers; mIdx++)
+				{
+					MarkerData& refMarker = pRB->MarkerPositions[mIdx];
+					refOutput << "\tRB Marker #" << pRB->MarkerRequiredLabels[mIdx] << ":" <<
+						"\tX=" << refMarker[0] << ", Y=" << refMarker[1] << ", Z=" << refMarker[2] << std::endl;
+				}
 				break;
 			}
 
@@ -118,6 +124,20 @@ void printModelDefinitions(std::ostream& refOutput, sDataDescriptions& refData)
 				break;
 			}
 
+			case Descriptor_Device:
+			{
+				sDeviceDescription* pDev = refData.arrDataDescriptions[dIdx].Data.DeviceDescription;
+				refOutput << "Device '" << pDev->strSerialNo << "' "
+					<< "(ID: " << pDev->ID
+					<< ", #Channels: " << pDev->nChannels
+					<< ")" << std::endl;
+				for (int cIdx = 0; cIdx < pDev->nChannels; cIdx++)
+				{
+					refOutput << "\tChannel " << cIdx << ": '" << pDev->szChannelNames[cIdx] << "'" << std::endl;
+				}
+				break;
+			}
+
 			default:
 			{
 				refOutput << "Unknown data descriptor " << refData.arrDataDescriptions[dIdx].type << std::endl;
@@ -132,7 +152,6 @@ void printFrameOfData(std::ostream& refOutput, sFrameOfMocapData& refData)
 	refOutput << "Frame Data ("
 		<< "Frame# " << refData.iFrame 
 		<< ", Timestamp: " << (((int)(refData.fTimestamp * 1000)) / 1000.0f) << "s"
-		<< ", Latency: " << (((int)(refData.fLatency * 1000)) / 1000.0f) << "s"
 		<< ")" << std::endl;
 
 	// print markersets and marker positions
@@ -156,12 +175,6 @@ void printFrameOfData(std::ostream& refOutput, sFrameOfMocapData& refData)
 			<< " (ID " << refRigidBody.ID 
 			<< ", " << (((refRigidBody.params & STATUS_TRACKED) != 0) ? "Tracked" : "Not Tracked")
 			<< "):" << std::endl;
-		for (int mIdx = 0; mIdx < refRigidBody.nMarkers; mIdx++)
-		{
-			MarkerData& refMarker = refRigidBody.Markers[mIdx];
-			refOutput << "\tRB Marker #" << refRigidBody.MarkerIDs[mIdx] << ":" <<
-				"\tX=" << refMarker[0] << ", Y=" << refMarker[1] << ", Z=" << refMarker[2] << std::endl;
-		}
 		refOutput << "\tPosition:    "
 			"X=" << refRigidBody.x << ", Y=" << refRigidBody.y << ", Z=" << refRigidBody.z << std::endl;
 		refOutput << "\tOrientation: "
@@ -185,14 +198,26 @@ void printFrameOfData(std::ostream& refOutput, sFrameOfMocapData& refData)
 		}
 	}
 
-	// print force plate data (as interaction device data)
+	// print force plate data
 	for (int fpIdx = 0; fpIdx < refData.nForcePlates; fpIdx++)
 	{
 		sForcePlateData& refForcePlate = refData.ForcePlates[fpIdx];
-		refOutput << "Device #" << fpIdx << " (ID " << refForcePlate.ID << "):" << std::endl;
+		refOutput << "Force Plate #" << fpIdx << " (ID " << refForcePlate.ID << "):" << std::endl;
 		for (int chIdx = 0; chIdx < refForcePlate.nChannels; chIdx++)
 		{
 			sAnalogChannelData& refChannel = refForcePlate.ChannelData[chIdx];
+			refOutput << "\tChn #" << chIdx << ":\t" << refChannel.Values[0] << std::endl;
+		}
+	}
+
+	// print periphery device data
+	for (int dIdx = 0; dIdx < refData.nDevices; dIdx++)
+	{
+		sDeviceData& refDevice = refData.Devices[dIdx];
+		refOutput << "Device #" << dIdx << " (ID " << refDevice.ID << "):" << std::endl;
+		for (int chIdx = 0; chIdx < refDevice.nChannels; chIdx++)
+		{
+			sAnalogChannelData& refChannel = refDevice.ChannelData[chIdx];
 			refOutput << "\tChn #" << chIdx << ":\t" << refChannel.Values[0] << std::endl;
 		}
 	}
